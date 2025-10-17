@@ -7,6 +7,8 @@ import adafruit_veml7700
 from adafruit_motorkit import MotorKit
 from adafruit_motor import stepper
 import logging
+import json
+import os
 
 # set up logging
 logging.basicConfig(
@@ -21,37 +23,81 @@ mux = adafruit_tca9548a.TCA9548A(i2c)
 motor_shield = MotorKit()
 
 # global variables
-channels = 5
+CHANNELS = 5 # do not change
+SETTINGS_FILE = "shade_settings.json"
+
 sunlight_threshold = 2500 # any lux reading over this number is considered "sunlight"
-sensor_array = [None] * 5 # dummy sensor variables, the initial scan will propagate them
-op_mode = "auto" # auto, manual, or setup
+sensor_array = [None] * CHANNELS # dummy sensor variables, the initial scan will propagate them
+op_mode = "auto" # auto, manual, schedule, or setup
 active_shade = "sunshade" # either "sunshade" or "blackout". stepper1 is the sunshade, stepper2 is the blackout
 step = 0 # how many steps the motor has taken away from its resting position. 0 means the shade is all the way open.
+sensor_steps = [None] * CHANNELS # the step positions corresponding to each sensor
 
-# read the previously saved setup settings from file, filling in global variables as necessary.
+# Save the active setup settings to a file, to be loaded on next startup.
+def save_settings():
+    settings = {
+        "sensor_array": sensor_array,
+        "op_mode": op_mode,
+        "active_shade": active_shade,
+        "step": step,
+        "sensor_steps": sensor_steps
+    }
+
+    try:
+        with open(SETTINGS_FILE, "w") as file:
+            json.dump(settings, file, indent=4)
+        logging.info("Settings saved!")
+    except Exception as e:
+        logging.error(f"Failed to save settings: {e}")
+
+# load the previously saved setup settings from file, filling in global variables as necessary.
 # also check how many sensors are currently being used, if it doesn't match the
 # previous settings, force the user to run setup again
-def read_settings():
-    # NOT YET IMPLEMENTED
-    pass
+def load_settings():
+    global step
+
+    if not os.path.exists(SETTINGS_FILE):
+        logging.info("Settings file not found. Launching setup.")
+        setup_mode()
+        return
+    try:
+        with open(SETTINGS_FILE, "r") as file:
+            settings = json.load(file)
+        logging.info("Settings loaded successfully!")
+        sensor_steps = settings["sensor_steps"]
+        op_mode = settings["op_mode"]
+        active_shade = settings["active_shade"]
+        step = settings["step"]
+        # if there is a sensor mismatch, force setup to run
+        if sum(1 for s in settings["sensor_array"] if s is not None) != sum(1 for s in sensor_array if s is not None):
+            logging.warning("Sensor mismatch detected. Launching setup.")
+            setup_mode()
+        return
+
+    except Exception as e:
+        logging.error(f"Failed to load settings: {e}")
 
 # propagate sensor array
 def scan_mux():
-    for channel in range(channels):
-        logging.info(f"scan_mux: attempting to access channel {channel}")
+    count = 0
+    for channel in range(CHANNELS):
+        logging.debug(f"scan_mux: attempting to access channel {channel}")
         if mux[channel].try_lock():
             addresses = mux[channel].scan()
             mux[channel].unlock()
-            if (16 in addresses):
-                logging.info(f"scan_mux: Light sensor was detected on channel {channel}")
+            if (16 in addresses): # VEML7700 has I2C address 0x10 (16 dec)
+                logging.debug(f"scan_mux: Light sensor was detected on channel {channel}")
                 # replace None in the sensor_array with a proper sensor object
                 sensor_array[channel] = adafruit_veml7700.VEML7700(mux[channel])
+                count += 1
             else:
-                logging.info(f"scan_mux: No light sensor detected on channel {channel}")
+                logging.debug(f"scan_mux: No light sensor detected on channel {channel}")
+    logging.info(f"scan_mux: {count} sensors were detected!")
+    return
 
 # returns an array of the current lux readings from all sensors
 def read_sensors():
-    out = [None] * 5
+    out = [None] * CHANNELS
     for i, sensor in enumerate(sensor_array):
         if sensor is None:
             continue
@@ -86,11 +132,26 @@ def move_motor_to_step(new_step):
                 motor_shield.stepper2.onestep(direction=stepper.FORWARD, style=stepper.SINGLE)
             step -= 1
             time.sleep(0.01)
+    return
+
+# Iterates through each sensor's readings from top to bottom.
+# For the first one that it finds is too bright, the blind is moved to match that sensor's height.
+def automatic_mode():
+    for i, lux in enumerate(read_sensors()):
+        if lux is None:
+            continue
+        if lux > sunlight_threshold:
+            logging.debug(f"automatic_mode: Sensor {i} detected sunlight ({lux} lux). Lowering shade.")
+            move_motor_to_step(sensor_steps[i])
+            return
+
+def setup_mode():
+    # NOT YET IMPLEMENTED
+    pass
 
 if __name__ == "__main__":
     scan_mux()
-    move_motor_to_step(360)
-    move_motor_to_step(0)
-    while True:
+    for i in range(10):
         _ = read_sensors()
+        move_motor_to_step(i * 20)
         time.sleep(1)
