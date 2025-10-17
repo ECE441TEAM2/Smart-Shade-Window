@@ -42,7 +42,7 @@ def scan_mux():
         if mux[channel].try_lock():
             addresses = mux[channel].scan()
             mux[channel].unlock()
-            if ("0x10" in addresses):
+            if (16 in addresses):
                 logging.info(f"scan_mux: Light sensor was detected on channel {channel}")
                 # replace None in the sensor_array with a proper sensor object
                 sensor_array[channel] = adafruit_veml7700.VEML7700(mux[channel])
@@ -65,25 +65,26 @@ def read_sensors():
 
 # given a new step value, move the motor to that step
 def move_motor_to_step(new_step):
+    global step
     var1 = new_step - step
     logging.info(f"move_motor_to_step: Moving from step {step} to {new_step} (delta {var1})")
-    # if positive, move up
+    # if positive, move down
     if var1 > 0:
         for i in range(var1):
-            if active_shade == "sunshade":
-                motor_shield.stepper1.onestep(direction=stepper.FORWARD, style=stepper.SINGLE)
-            else:
-                motor_shield.stepper2.onestep(direction=stepper.FORWARD, style=stepper.SINGLE)
-            step -= 1
-            time.sleep(0.01)
-    # if negative, move down
-    elif var1 < 0:
-        for i in range(-var1):
             if active_shade == "sunshade":
                 motor_shield.stepper1.onestep(direction=stepper.BACKWARD, style=stepper.SINGLE)
             else:
                 motor_shield.stepper2.onestep(direction=stepper.BACKWARD, style=stepper.SINGLE)
             step += 1
+            time.sleep(0.01)
+    # if negative, move up
+    elif var1 < 0:
+        for i in range(-var1):
+            if active_shade == "sunshade":
+                motor_shield.stepper1.onestep(direction=stepper.FORWARD, style=stepper.SINGLE)
+            else:
+                motor_shield.stepper2.onestep(direction=stepper.FORWARD, style=stepper.SINGLE)
+            step -= 1
             time.sleep(0.01)
 
 if __name__ == "__main__":
@@ -92,3 +93,4 @@ if __name__ == "__main__":
     move_motor_to_step(0)
     while True:
         _ = read_sensors()
+        time.sleep(1)

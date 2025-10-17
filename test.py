@@ -18,6 +18,7 @@ for channel in range(8):
         print("Channel {}:".format(channel), end="")
         addresses = mux[channel].scan()
         print([hex(address) for address in addresses if address != 0x70])
+        print([type(address) for address in addresses])
         mux[channel].unlock()
 
 # test the light sensor in MUX slot 0
