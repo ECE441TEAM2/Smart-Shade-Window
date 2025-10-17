@@ -41,13 +41,13 @@ def scan_mux():
         logging.info(f"scan_mux: attempting to access channel {channel}")
         if mux[channel].try_lock():
             addresses = mux[channel].scan()
+            mux[channel].unlock()
             if (0x70 in addresses):
                 logging.info(f"scan_mux: Light sensor was detected on channel {channel}")
                 # replace None in the sensor_array with a proper sensor object
                 sensor_array[channel] = adafruit_veml7700.VEML7700(mux[channel])
             else:
                 logging.info(f"scan_mux: No light sensor detected on channel {channel}")
-            mux[channel].unlock()
 
 # returns an array of the current lux readings from all sensors
 def read_sensors():
