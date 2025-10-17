@@ -55,6 +55,8 @@ def save_settings():
 # previous settings, force the user to run setup again
 def load_settings():
     global step
+    global active_shade
+    global op_mode
 
     if not os.path.exists(SETTINGS_FILE):
         logging.info("Settings file not found. Launching setup.")
@@ -132,6 +134,28 @@ def move_motor_to_step(new_step):
                 motor_shield.stepper2.onestep(direction=stepper.FORWARD, style=stepper.SINGLE)
             step -= 1
             time.sleep(0.01)
+    return
+
+# Switches the currently active blind to the the other blind.
+# The original blind is moved back to its starting point (0) and the new blind moves
+# to the same step position as the original blind.
+def swap_blind():
+    global active_shade
+    global step
+
+    # make a copy of the current step since it will be overwritten by move_motor_to_step
+    saved_step = step
+    logging.debug(f"swap_blind: Swapping from {active_shade} blind.")
+    # Move current blind back to 0
+    move_motor_to_step(0)
+    # Swap active blind
+    if active_shade == "sunshade":
+        active_shade = "blackout"
+    else:
+        active_shade = "sunshade"
+    # Move new blind to the previous step position
+    move_motor_to_step(saved_step)
+    logging.debug(f"swap_blind: Now using {active_shade} blind.")
     return
 
 # Iterates through each sensor's readings from top to bottom.
