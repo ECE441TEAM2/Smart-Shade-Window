@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Shade Window Setup</title>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f8f5ff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+  }
+
+  .container {
+    width: 100%;
+    height: 600px;
+    max-width: 400px;
+    background: #fefcff;
+    border-radius: 20px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    padding: 1.5rem;
+    text-align: center;
+  }
+
+  h1, h2, p {
+    text-align: center;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  h2 {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+
+  .nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.5rem;
+  }
+
+  .nav .material-icons {
+    font-size: 36px;
+    cursor: pointer;
+    color: #222;
+  }
+
+  .nav.center {
+    justify-content: center;
+  }
+
+  .arrow-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  /* Levels and schedules list styling */
+  .action-btn {
+    background-color: #e6dbff;
+    color: #3b228a;
+    border: none;
+    border-radius: 10px;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    margin: 1rem auto;
+    transition: all 0.2s ease-in-out;
+  }
+
+  .action-btn:hover {
+    background-color: #d8caff;
+  }
+
+  .level-list, .schedule-list {
+    max-height: 200px;
+    overflow-y: auto;
+    width: 90%;
+    margin: 0 auto;
+  }
+
+  .level-item, .schedule-item {
+    background: #f7f4ff;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    margin: 0.5rem 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .delete-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #a00;
+  }
+
+  input[type="range"] {
+    width: 80%;
+    accent-color: #7b4cff;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div id="content"></div>
+  <div class="nav" id="nav">
+    <button class="arrow-btn" id="prevBtn"><span class="material-icons">arrow_back</span></button>
+    <button class="arrow-btn" id="nextBtn"><span class="material-icons">arrow_forward</span></button>
+  </div>
+</div>
+
+<script>
+let currentStep = 0;
+let motorAngle = 37; // Simulated dynamic variable
+let levels = [];
+let schedules = [];
+
+const steps = [
+  {
+    title: "Smart Shade Window",
+    subtitle: "Welcome Setup",
+    body: `
+      Start by moving to the next screen to calibrate the two blinds.<br><br>
+      The kit should have:<br>
+      • Light Sensors (3 to 5)<br>
+      • Blind Structure with Motors and Pi
+    `
+  },
+  {
+    title: "Smart Shade Window",
+    subtitle: "Calibration",
+    body: `
+      Calibrate the first blind (normal) by pressing the up and down arrow keys below.<br>
+      This also provides the stepper motor rotation angle for debugging.<br><br>
+      Please set the blind FULLY UP.<br><br>
+      <b>Motor Angle:</b> <span id="motorAngle">${motorAngle}</span> degrees<br><br>
+      <div>
+        <button class="arrow-btn" onclick="changeAngle(-5)"><span class="material-icons">arrow_downward</span></button>
+        <button class="arrow-btn" onclick="changeAngle(5)"><span class="material-icons">arrow_upward</span></button>
+      </div>
+    `
+  },
+  {
+    title: "Smart Shade Window",
+    subtitle: "Calibration",
+    body: `
+      Calibrate the first blind (normal) again by pressing the up and down arrows below.<br>
+      Please set the blind FULLY DOWN.<br><br>
+      <b>Motor Angle:</b> <span id="motorAngle">${motorAngle}</span> degrees<br><br>
+      <div>
+        <button class="arrow-btn" onclick="changeAngle(-5)"><span class="material-icons">arrow_downward</span></button>
+        <button class="arrow-btn" onclick="changeAngle(5)"><span class="material-icons">arrow_upward</span></button>
+      </div>
+    `
+  },
+  {
+    title: "Smart Shade Window",
+    subtitle: "Levels",
+    body: `
+      Add levels for your blinds with respect to your light sensors.<br><br>
+      Add respective positions below.<br>
+      <button id="addLevelBtn" class="action-btn"><span class="material-icons">add</span>Add Level</button>
+      <div id="levelList" class="level-list"></div>
+    `,
+    levels: true
+  },
+  {
+    title: "Smart Shade Window",
+    subtitle: "Light Sensor Threshold",
+    body: `
+      Set the light sensor threshold based on the intensity it records.<br><br>
+      For reference, the sun’s max intensity is 100klux (83% of what the Light Sensor can record).<br><br>
+      Light Sensor Reads: <b>40%</b> (48kLux)
+      <div style="margin-top:1.5rem;">
+        <div id="thresholdValue" style="font-size:1.6rem; font-weight:bold;">50%</div>
+        <input type="range" id="thresholdSlider" min="0" max="100" value="50">
+      </div>
+    `,
+    threshold: true
+  },
+  {
+    title: "Smart Shade Window",
+    subtitle: "Schedules",
+    body: `
+      Add schedules for your blinds to move automatically at specific times.<br><br>
+      Use the button below to add new schedules.<br>
+      <button id="addScheduleBtn" class="action-btn"><span class="material-icons">add</span>Add Schedule</button>
+      <div id="scheduleList" class="schedule-list"></div>
+    `,
+    schedules: true
+  }
+];
+
+// Render function
+function renderStep() {
+  const step = steps[currentStep];
+  const content = document.getElementById("content");
+  const nav = document.getElementById("nav");
+  
+  content.innerHTML = `
+    <h1>${step.title}</h1>
+    <h2>${step.subtitle}</h2>
+    <p>${step.body}</p>
+  `;
+
+  // hide or center nav
+  const prevBtn = document.getElementById("prevBtn");
+  const nextBtn = document.getElementById("nextBtn");
+  prevBtn.style.visibility = currentStep === 0 ? "hidden" : "visible";
+  nextBtn.style.visibility = currentStep === steps.length - 1 ? "hidden" : "visible";
+  nav.classList.toggle("center", currentStep === 0 || currentStep === steps.length - 1);
+
+  // Levels
+  if (step.levels) {
+    const addBtn = document.getElementById("addLevelBtn");
+    const list = document.getElementById("levelList");
+
+    function renderLevels() {
+      list.innerHTML = levels.map((lvl, i) => `
+        <div class="level-item">
+          <div><strong>Level ${i + 1}</strong>: ${lvl.angle}°</div>
+          <button class="delete-btn" data-index="${i}"><span class="material-icons">delete</span></button>
+        </div>
+      `).join("");
+      document.querySelectorAll(".delete-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const index = btn.getAttribute("data-index");
+          levels.splice(index, 1);
+          renderLevels();
+        });
+      });
+    }
+
+    addBtn.addEventListener("click", () => {
+      const angle = prompt("Enter motor angle for this level:", motorAngle);
+      if (angle !== null) {
+        levels.push({ angle });
+        renderLevels();
+      }
+    });
+    renderLevels();
+  }
+
+  // Threshold slider
+  if (step.threshold) {
+    const slider = document.getElementById("thresholdSlider");
+    const valueDisplay = document.getElementById("thresholdValue");
+    slider.addEventListener("input", () => {
+      valueDisplay.innerText = `${slider.value}%`;
+    });
+  }
+
+  // Schedules
+  if (step.schedules) {
+    const addBtn = document.getElementById("addScheduleBtn");
+    const list = document.getElementById("scheduleList");
+
+    function renderSchedules() {
+      list.innerHTML = schedules.map((sch, i) => `
+        <div class="schedule-item">
+          <div><strong>${sch.time}</strong> - Motor ${sch.motor} → Level ${sch.level}</div>
+          <button class="delete-btn" data-index="${i}"><span class="material-icons">delete</span></button>
+        </div>
+      `).join("");
+      document.querySelectorAll(".delete-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const index = btn.getAttribute("data-index");
+          schedules.splice(index, 1);
+          renderSchedules();
+        });
+      });
+    }
+
+    addBtn.addEventListener("click", () => {
+      const hour = prompt("Enter hour (0–23):", "8");
+      const minute = prompt("Enter minute (0–59):", "30");
+      const motor = prompt("Select motor (1 or 2):", "1");
+      const level = prompt("Select level (e.g., 1, 2, 3):", "1");
+      if (hour && minute && motor && level) {
+        const time = `${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`;
+        schedules.push({ time, motor, level });
+        renderSchedules();
+      }
+    });
+    renderSchedules();
+  }
+}
+
+function changeAngle(delta) {
+  motorAngle = Math.max(0, motorAngle + delta);
+  document.querySelectorAll("#motorAngle").forEach(el => el.textContent = motorAngle);
+}
+
+document.getElementById("prevBtn").addEventListener("click", () => {
+  if (currentStep > 0) currentStep--;
+  renderStep();
+});
+
+document.getElementById("nextBtn").addEventListener("click", () => {
+  if (currentStep < steps.length - 1) currentStep++;
+  renderStep();
+});
+
+renderStep();
+</script>
+</body>
+</html>
+
