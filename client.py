@@ -10,6 +10,10 @@ import logging
 import json
 import os
 
+# we may not need this stuff after adding the web app communication
+import keyboard
+import threading
+
 # set up logging
 logging.basicConfig(
     level=logging.DEBUG,
@@ -32,6 +36,12 @@ op_mode = "auto" # auto, manual, schedule, or setup
 active_shade = "sunshade" # either "sunshade" or "blackout". stepper1 is the sunshade, stepper2 is the blackout
 step = 0 # how many steps the motor has taken away from its resting position. 0 means the shade is all the way open.
 sensor_steps = [0] * CHANNELS # the step positions corresponding to each sensor
+
+running = True # main loop control variable, is set to False when the user presses Q
+    # FYI: this should be done more gracefully in the future, since the user shouldn't really be turning the application off.
+    # this mostly serves to save the settings before exiting
+    # but it would be better to just periodically save the settings since in most cases, if the device shuts down,
+    # it will be unexpected (power loss, crash, etc)
 
 # Save the active setup settings to a file, to be loaded on next startup.
 def save_settings():
@@ -164,6 +174,11 @@ def swap_blind():
     logging.debug(f"swap_blind: Now using {active_shade} blind.")
     return
 
+# Uses the web app to set up variables used by the other modes.
+def setup_mode():
+    # NOT YET IMPLEMENTED
+    pass
+
 # Iterates through each sensor's readings from top to bottom.
 # For the first one that it finds is too bright, the blind is moved to match that sensor's height.
 def automatic_mode():
@@ -175,25 +190,70 @@ def automatic_mode():
             move_motor_to_step(sensor_steps[i])
             return
 
-def setup_mode():
+# Allows the user to use up/down buttons to move the blind manually.
+def manual_mode():
     # NOT YET IMPLEMENTED
     pass
+
+# Follows the schedule imported during setup/created by the web app.
+def schedule_mode():
+    # NOT YET IMPLEMENTED
+    pass
+
+# A separate thread to listen to keypresses for manual control.
+# In the future, this can be replaced with web app communication.
+# Keypress controls: A for automatic mode, M for manual mode, S for setup mode, C for scheduler mode, B for blind swap
+# In manual mode, press up and down arrows to move the blind
+# Q to quit the application
+def keypress_listener():
+    global op_mode
+    global active_shade
+
+    while running:
+        if keyboard.is_pressed('a'): # switch to automatic mode
+            op_mode = "auto"
+        elif keyboard.is_pressed('m'): # switch to manual mode
+            op_mode = "manual"
+        elif keyboard.is_pressed('s'): # switch to setup mode
+            op_mode = "setup"
+        elif keyboard.is_pressed('c'): # switch to schedule mode
+            op_mode = "schedule"
+        elif keyboard.is_pressed('b'): # swap blinds
+            swap_blind()
+        elif keyboard.is_pressed('q'): # quit
+            running = False
+
+        # manual mode controls
+        if op_mode == "manual":
+            if keyboard.is_pressed('up'):
+                move_motor_to_step(step - 1)
+            elif keyboard.is_pressed('down'):
+                move_motor_to_step(step + 1)
+
+        time.sleep(0.1)
 
 if __name__ == "__main__":
     # first check how many sensors there are and propagate the sensor array
     scan_mux()
-    # next attempt to load settings from file (if file doesnt exist or sensor quantity mismatch, this also runs setup)
+    # then attempt to load settings from file (if file doesnt exist or sensor quantity mismatch, this also runs setup)
     load_settings()
-    print(sensor_steps)
-    # short testing sequence
-    for i in range(10):
-        automatic_mode()
+
+    # create a separate thread to listen for keypresses (means they aren't affected by waits)
+    # In the future, can replace this with web app communication.
+    listener = threading.Thread(target=keypress_listener, daemon=True).start()
+
+    while running:
+        logging.debug("main: Blind is currently operating in {op_mode} mode")
+        match op_mode:
+            case "setup":
+                setup_mode()
+            case "automatic":
+                automatic_mode()
+            case "schedule":
+                schedule_mode()
+            # manual mode is completely handled within the keypress listener
         time.sleep(1)
-    # test swapping the blind
-    swap_blind()
+
+    # shutdown sequence
     # save the blind settings
     save_settings()
-    # continue iterating until shutdown
-    while True:
-        automatic_mode()
-        time.sleep(1)
