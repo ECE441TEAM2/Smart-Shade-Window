@@ -1,0 +1,19 @@
+{
+    "sensor_mask": [
+        1,
+        1,
+        1,
+        1,
+        1
+    ],
+    "op_mode": "auto",
+    "active_shade": "blackout",
+    "step": 300,
+    "sensor_steps": [
+        100,
+        200,
+        300,
+        400,
+        500
+    ]
+}
