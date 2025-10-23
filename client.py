@@ -207,7 +207,7 @@ def keypress_listener():
 
     while running:
         if keyboard.is_pressed('a'): # switch to automatic mode
-            op_mode = "automatic"
+            op_mode = "auto"
         elif keyboard.is_pressed('m'): # switch to manual mode
             op_mode = "manual"
         elif keyboard.is_pressed('s'): # switch to setup mode
@@ -243,7 +243,7 @@ if __name__ == "__main__":
         match op_mode:
             case "setup":
                 setup_mode()
-            case "automatic":
+            case "auto":
                 automatic_mode()
             case "schedule":
                 schedule_mode()
