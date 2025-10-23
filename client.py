@@ -12,7 +12,7 @@ import os
 
 # set up logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%H:%M:%S"
 )
@@ -31,12 +31,13 @@ sensor_array = [None] * CHANNELS # dummy sensor variables, the initial scan will
 op_mode = "auto" # auto, manual, schedule, or setup
 active_shade = "sunshade" # either "sunshade" or "blackout". stepper1 is the sunshade, stepper2 is the blackout
 step = 0 # how many steps the motor has taken away from its resting position. 0 means the shade is all the way open.
-sensor_steps = [None] * CHANNELS # the step positions corresponding to each sensor
+sensor_steps = [0] * CHANNELS # the step positions corresponding to each sensor
 
 # Save the active setup settings to a file, to be loaded on next startup.
 def save_settings():
+    sensor_mask = sensor_mask_helper()
     settings = {
-        "sensor_array": sensor_array,
+        "sensor_mask": sensor_mask,
         "op_mode": op_mode,
         "active_shade": active_shade,
         "step": step,
@@ -57,6 +58,7 @@ def load_settings():
     global step
     global active_shade
     global op_mode
+    global sensor_steps
 
     if not os.path.exists(SETTINGS_FILE):
         logging.info("Settings file not found. Launching setup.")
@@ -71,13 +73,17 @@ def load_settings():
         active_shade = settings["active_shade"]
         step = settings["step"]
         # if there is a sensor mismatch, force setup to run
-        if sum(1 for s in settings["sensor_array"] if s is not None) != sum(1 for s in sensor_array if s is not None):
+        if sum(1 for s in settings["sensor_mask"] if s is not None) != sum(1 for s in sensor_array if s is not None):
             logging.warning("Sensor mismatch detected. Launching setup.")
             setup_mode()
         return
 
     except Exception as e:
         logging.error(f"Failed to load settings: {e}")
+
+# returns an array which replaces every sensor instance in the array with just a 1, which is actually saveable to json
+def sensor_mask_helper():
+    return [None if x is None else 1 for x in sensor_array]
 
 # propagate sensor array
 def scan_mux():
@@ -165,7 +171,7 @@ def automatic_mode():
         if lux is None:
             continue
         if lux > sunlight_threshold:
-            logging.debug(f"automatic_mode: Sensor {i} detected sunlight ({lux} lux). Lowering shade.")
+            logging.debug(f"automatic_mode: Sensor {i} detected sunlight ({lux} lux). Adjusting shade.")
             move_motor_to_step(sensor_steps[i])
             return
 
@@ -174,8 +180,20 @@ def setup_mode():
     pass
 
 if __name__ == "__main__":
+    # first check how many sensors there are and propagate the sensor array
     scan_mux()
+    # next attempt to load settings from file (if file doesnt exist or sensor quantity mismatch, this also runs setup)
+    load_settings()
+    print(sensor_steps)
+    # short testing sequence
     for i in range(10):
-        _ = read_sensors()
-        move_motor_to_step(i * 20)
+        automatic_mode()
+        time.sleep(1)
+    # test swapping the blind
+    swap_blind()
+    # save the blind settings
+    save_settings()
+    # continue iterating until shutdown
+    while True:
+        automatic_mode()
         time.sleep(1)
