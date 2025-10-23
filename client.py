@@ -131,7 +131,7 @@ def read_sensors():
 def move_motor_to_step(new_step):
     global step
     var1 = new_step - step
-    logging.info(f"move_motor_to_step: Moving from step {step} to {new_step} (delta {var1})")
+    logging.debug(f"move_motor_to_step: Moving from step {step} to {new_step} (delta {var1})")
     # if positive, move down
     if var1 > 0:
         for i in range(var1):
@@ -190,11 +190,6 @@ def automatic_mode():
             move_motor_to_step(sensor_steps[i])
             return
 
-# Allows the user to use up/down buttons to move the blind manually.
-def manual_mode():
-    # NOT YET IMPLEMENTED
-    pass
-
 # Follows the schedule imported during setup/created by the web app.
 def schedule_mode():
     # NOT YET IMPLEMENTED
@@ -208,10 +203,11 @@ def schedule_mode():
 def keypress_listener():
     global op_mode
     global active_shade
+    global running
 
     while running:
         if keyboard.is_pressed('a'): # switch to automatic mode
-            op_mode = "auto"
+            op_mode = "automatic"
         elif keyboard.is_pressed('m'): # switch to manual mode
             op_mode = "manual"
         elif keyboard.is_pressed('s'): # switch to setup mode
@@ -230,7 +226,7 @@ def keypress_listener():
             elif keyboard.is_pressed('down'):
                 move_motor_to_step(step + 1)
 
-        time.sleep(0.1)
+        time.sleep(0.05)
 
 if __name__ == "__main__":
     # first check how many sensors there are and propagate the sensor array
@@ -243,7 +239,7 @@ if __name__ == "__main__":
     listener = threading.Thread(target=keypress_listener, daemon=True).start()
 
     while running:
-        logging.debug("main: Blind is currently operating in {op_mode} mode")
+        logging.debug(f"main: Blind is currently operating in {op_mode} mode")
         match op_mode:
             case "setup":
                 setup_mode()
@@ -257,3 +253,4 @@ if __name__ == "__main__":
     # shutdown sequence
     # save the blind settings
     save_settings()
+    logging.info("Goodbye!")

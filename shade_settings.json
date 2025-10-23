@@ -8,12 +8,12 @@
     ],
     "op_mode": "auto",
     "active_shade": "blackout",
-    "step": 300,
+    "step": 396,
     "sensor_steps": [
-        100,
         200,
-        300,
         400,
-        500
+        600,
+        800,
+        1000
     ]
 }
