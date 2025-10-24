@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Shade Window Setup</title>
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Smart Shade Setup</title>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
 <style>
   body {
     font-family: Arial, sans-serif;
-    background-color: #f8f5ff;
+    background-color: #eae7f5;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -16,51 +16,33 @@
     margin: 0;
   }
 
-  .container {
-    width: 100%;
-    height: 600px;
-    max-width: 400px;
+  .phone-frame {
+    width: 390px;
+    height: 760px;
     background: #fefcff;
-    border-radius: 20px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    border-radius: 32px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .container {
     padding: 1.5rem;
     text-align: center;
+    flex: 1;
+    overflow-y: auto;
   }
 
-  h1, h2, p {
-    text-align: center;
-  }
-
-  h1 {
-    font-size: 1.5rem;
-    margin-bottom: 0.5rem;
-  }
-
-  h2 {
-    font-size: 1.2rem;
-    margin-bottom: 1rem;
-  }
-
-  p {
-    font-size: 1rem;
-    line-height: 1.4;
-  }
+  h1 { font-size: 1.4rem; margin-bottom: 0.3rem; }
+  h2 { font-size: 1.2rem; margin-bottom: 1rem; }
+  p { font-size: 1rem; line-height: 1.4; color: #222; }
 
   .nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 1.5rem;
-  }
-
-  .nav .material-icons {
-    font-size: 36px;
-    cursor: pointer;
-    color: #222;
-  }
-
-  .nav.center {
-    justify-content: center;
+    padding: 1rem;
   }
 
   .arrow-btn {
@@ -68,8 +50,19 @@
     border: none;
     cursor: pointer;
   }
+  .arrow-btn .material-icons {
+    font-size: 42px;
+    color: #3b228a;
+  }
 
-  /* Levels and schedules list styling */
+  .vertical-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 1rem;
+    gap: 0.5rem;
+  }
+
   .action-btn {
     background-color: #e6dbff;
     color: #3b228a;
@@ -84,19 +77,18 @@
     margin: 1rem auto;
     transition: all 0.2s ease-in-out;
   }
+  .action-btn:hover { background-color: #d8caff; }
 
-  .action-btn:hover {
-    background-color: #d8caff;
-  }
-
-  .level-list, .schedule-list {
-    max-height: 200px;
+  .level-list,
+  .schedule-list {
+    max-height: 180px;
     overflow-y: auto;
     width: 90%;
     margin: 0 auto;
   }
 
-  .level-item, .schedule-item {
+  .level-item,
+  .schedule-item {
     background: #f7f4ff;
     border-radius: 8px;
     padding: 0.5rem 1rem;
@@ -113,215 +105,309 @@
     color: #a00;
   }
 
-  input[type="range"] {
-    width: 80%;
-    accent-color: #7b4cff;
+  input[type="range"] { width: 80%; accent-color: #7b4cff; }
+
+  input[type="time"],
+  select {
+    padding: 0.4rem 0.5rem;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+    margin: 0.25rem;
+  }
+
+  .summary-box {
+    background: #f7f4ff;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-top: 1rem;
+    text-align: left;
+    font-size: 0.95rem;
+  }
+  .summary-section {
+    margin-bottom: 1rem;
+  }
+  .summary-section strong {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #3b228a;
+  }
+
+  #saveNotice {
+    font-size: 0.8rem;
+    color: #555;
+    margin-top: 0.5rem;
   }
 </style>
 </head>
 <body>
-<div class="container">
-  <div id="content"></div>
-  <div class="nav" id="nav">
-    <button class="arrow-btn" id="prevBtn"><span class="material-icons">arrow_back</span></button>
-    <button class="arrow-btn" id="nextBtn"><span class="material-icons">arrow_forward</span></button>
+  <div class="phone-frame">
+    <div class="container">
+      <div id="content"></div>
+      <div id="saveNotice"></div>
+    </div>
+    <div class="nav" id="nav">
+      <button class="arrow-btn" id="prevBtn"><span class="material-icons">arrow_back_ios</span></button>
+      <button class="arrow-btn" id="nextBtn"><span class="material-icons">arrow_forward_ios</span></button>
+    </div>
   </div>
-</div>
 
-<script>
-let currentStep = 0;
-let motorAngle = 37; // Simulated dynamic variable
-let levels = [];
-let schedules = [];
+  <script>
+    let currentStep = 0;
+    let motorSteps = { 1: 0, 2: 0 };
+    let sensor_steps = [];
+    let schedules = [];
+    let threshold = 5;
+    let light = 48;
 
-const steps = [
-  {
-    title: "Smart Shade Window",
-    subtitle: "Welcome Setup",
-    body: `
-      Start by moving to the next screen to calibrate the two blinds.<br><br>
-      The kit should have:<br>
-      • Light Sensors (3 to 5)<br>
-      • Blind Structure with Motors and Pi
-    `
-  },
-  {
-    title: "Smart Shade Window",
-    subtitle: "Calibration",
-    body: `
-      Calibrate the first blind (normal) by pressing the up and down arrow keys below.<br>
-      This also provides the stepper motor rotation angle for debugging.<br><br>
-      Please set the blind FULLY UP.<br><br>
-      <b>Motor Angle:</b> <span id="motorAngle">${motorAngle}</span> degrees<br><br>
-      <div>
-        <button class="arrow-btn" onclick="changeAngle(-5)"><span class="material-icons">arrow_downward</span></button>
-        <button class="arrow-btn" onclick="changeAngle(5)"><span class="material-icons">arrow_upward</span></button>
-      </div>
-    `
-  },
-  {
-    title: "Smart Shade Window",
-    subtitle: "Calibration",
-    body: `
-      Calibrate the first blind (normal) again by pressing the up and down arrows below.<br>
-      Please set the blind FULLY DOWN.<br><br>
-      <b>Motor Angle:</b> <span id="motorAngle">${motorAngle}</span> degrees<br><br>
-      <div>
-        <button class="arrow-btn" onclick="changeAngle(-5)"><span class="material-icons">arrow_downward</span></button>
-        <button class="arrow-btn" onclick="changeAngle(5)"><span class="material-icons">arrow_upward</span></button>
-      </div>
-    `
-  },
-  {
-    title: "Smart Shade Window",
-    subtitle: "Levels",
-    body: `
-      Add levels for your blinds with respect to your light sensors.<br><br>
-      Add respective positions below.<br>
-      <button id="addLevelBtn" class="action-btn"><span class="material-icons">add</span>Add Level</button>
-      <div id="levelList" class="level-list"></div>
-    `,
-    levels: true
-  },
-  {
-    title: "Smart Shade Window",
-    subtitle: "Light Sensor Threshold",
-    body: `
-      Set the light sensor threshold based on the intensity it records.<br><br>
-      For reference, the sun’s max intensity is 100klux (83% of what the Light Sensor can record).<br><br>
-      Light Sensor Reads: <b>40%</b> (48kLux)
-      <div style="margin-top:1.5rem;">
-        <div id="thresholdValue" style="font-size:1.6rem; font-weight:bold;">50%</div>
-        <input type="range" id="thresholdSlider" min="0" max="100" value="50">
-      </div>
-    `,
-    threshold: true
-  },
-  {
-    title: "Smart Shade Window",
-    subtitle: "Schedules",
-    body: `
-      Add schedules for your blinds to move automatically at specific times.<br><br>
-      Use the button below to add new schedules.<br>
-      <button id="addScheduleBtn" class="action-btn"><span class="material-icons">add</span>Add Schedule</button>
-      <div id="scheduleList" class="schedule-list"></div>
-    `,
-    schedules: true
-  }
-];
+    const config = {
+      sensor_steps: [],
+      motors: [],
+      threshold: 5,
+      schedules: [],
+    };
 
-// Render function
-function renderStep() {
-  const step = steps[currentStep];
-  const content = document.getElementById("content");
-  const nav = document.getElementById("nav");
-  
-  content.innerHTML = `
-    <h1>${step.title}</h1>
-    <h2>${step.subtitle}</h2>
-    <p>${step.body}</p>
-  `;
+    async function saveConfig() {
+      config.motors;
+      config.sensor_steps = sensor_steps;
+      config.threshold = threshold;
+      config.schedules = schedules;
 
-  // hide or center nav
-  const prevBtn = document.getElementById("prevBtn");
-  const nextBtn = document.getElementById("nextBtn");
-  prevBtn.style.visibility = currentStep === 0 ? "hidden" : "visible";
-  nextBtn.style.visibility = currentStep === steps.length - 1 ? "hidden" : "visible";
-  nav.classList.toggle("center", currentStep === 0 || currentStep === steps.length - 1);
-
-  // Levels
-  if (step.levels) {
-    const addBtn = document.getElementById("addLevelBtn");
-    const list = document.getElementById("levelList");
-
-    function renderLevels() {
-      list.innerHTML = levels.map((lvl, i) => `
-        <div class="level-item">
-          <div><strong>Level ${i + 1}</strong>: ${lvl.angle}°</div>
-          <button class="delete-btn" data-index="${i}"><span class="material-icons">delete</span></button>
-        </div>
-      `).join("");
-      document.querySelectorAll(".delete-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-          const index = btn.getAttribute("data-index");
-          levels.splice(index, 1);
-          renderLevels();
-        });
-      });
+      const saveMsg = document.getElementById("saveNotice");
+      const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "shade_settings.json";
+      a.click();
+      saveMsg.textContent = "✅ Configuration saved as JSON file.";
+      setTimeout(() => (saveMsg.textContent = ""), 3000);
     }
 
-    addBtn.addEventListener("click", () => {
-      const angle = prompt("Enter motor angle for this level:", motorAngle);
-      if (angle !== null) {
-        levels.push({ angle });
-        renderLevels();
+    const steps = [
+      {
+        title: "Smart Shade Setup",
+        subtitle: "Welcome",
+        body: `Begin setup for both blinds.<br><br>Kit includes:<br>• Two Blinds<br>• Light sensor<br>• Motor Housing Structure`,
+      },
+      {
+        title: "Smart Shade Setup",
+        subtitle: "Calibration (Normal Blind)",
+        body: `
+          Set the normal blind <b>FULLY UP</b> by using the arrow keys below<br><br>
+          <b>Normal Motor Step:</b> <span id="motorStep1">${motorSteps[1]}</span><br><br>
+          <div class="vertical-controls">
+            <button class="arrow-btn" onclick="changeStep(-10,1)"><span class="material-icons">arrow_upward</span></button>
+            <button class="arrow-btn" onclick="changeStep(10,1)"><span class="material-icons">arrow_downward</span></button>
+          </div>
+        `,
+        motor: 1
+      },
+      {
+        title: "Smart Shade Setup",
+        subtitle: "Calibration (Blackout Blind)",
+        body: `
+          Set the blackout blind <b>FULLY UP</b> by using the arrow keys below<br><br>
+          <b>Blackout Motor Step:</b> <span id="motorStep2">${motorSteps[2]}</span><br><br>
+          <div class="vertical-controls">
+            <button class="arrow-btn" onclick="changeStep(-10,2)"><span class="material-icons">arrow_upward</span></button>
+            <button class="arrow-btn" onclick="changeStep(10,2)"><span class="material-icons">arrow_downward</span></button>
+          </div>
+        `,
+        motor: 2
+      },
+      {
+        title: "Smart Shade Setup",
+        subtitle: "sensor_steps",
+        body: `
+          Move the normal blind and tap “Add Level” to store a position.<br><br>
+          <b>Normal Motor Step:</b> <span id="motorStep1">${motorSteps[1]}</span><br><br>
+          <div class="vertical-controls">
+            <button class="arrow-btn" onclick="changeStep(-10,1)"><span class="material-icons">arrow_upward</span></button>
+            <button class="arrow-btn" onclick="changeStep(10,1)"><span class="material-icons">arrow_downward</span></button>
+          </div>
+          <button id="addLevelBtn" class="action-btn"><span class="material-icons">add</span>Add Level</button>
+          <div id="levelList" class="level-list"></div>
+        `,
+        sensor_steps: true,
+      },
+      {
+        title: "Smart Shade Setup",
+        subtitle: "Light Sensor Threshold",
+        body: `
+          Adjust the light sensor threshold according to your needs<br><br>
+          Light Sensor currently reads: <b>${parseInt((light / 120) * 100)}%</b><br><br>
+          <div style="margin-top:1.5rem;">
+            <div id="thresholdValue" style="font-size:1.6rem;font-weight:bold;">${threshold}%</div>
+            <input type="range" id="thresholdSlider" min="0" max="100" value="${threshold}">
+          </div>
+        `,
+        threshold: true,
+      },
+      {
+        title: "Schedules",
+        subtitle: "Automation Setup",
+        body: `
+          Add an optional schedule for your Smart Shades<br><br>
+          <div style="display:flex; flex-direction:column;justify-content:center;align-items:center;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;">
+            <input type="time" id="scheduleTime" />
+            <select id="scheduleMotor">
+              <option value="1">Normal</option>
+              <option value="2">Blackout</option>
+            </select>
+            <select id="scheduleLevel"></select>
+            <button id="addScheduleBtn" class="action-btn" style="padding:0.5rem 1rem;"><span class="material-icons">add</span></button>
+          </div>
+          <div id="scheduleList" class="schedule-list"></div>
+        `,
+        schedules: true,
+      },
+      {
+        title: "Summary",
+        subtitle: "Review & Save",
+        body: `
+          Review setup, then press “Save Configuration.”<br>
+          <div id="summaryBox" class="summary-box"></div>
+          <button id="saveBtn" class="action-btn"><span class="material-icons">save</span>Save Configuration</button>
+        `,
+        summary: true,
+      },
+    ];
+
+    function renderStep() {
+      const step = steps[currentStep];
+      const content = document.getElementById("content");
+      content.innerHTML = `<h1>${step.title}</h1><h2>${step.subtitle}</h2><p>${step.body}</p>`;
+
+      document.getElementById("prevBtn").style.visibility = currentStep === 0 ? "hidden" : "visible";
+      document.getElementById("nextBtn").style.visibility = currentStep === steps.length - 1 ? "hidden" : "visible";
+
+      // sensor_steps
+      if (step.sensor_steps) {
+        const addBtn = document.getElementById("addLevelBtn");
+        const list = document.getElementById("levelList");
+        function rendersensor_steps() {
+          list.innerHTML = sensor_steps.map((l, i) => `
+            <div class="level-item">
+              <div><strong>Level ${i + 1}</strong>: ${l.step} steps</div>
+              <button class="delete-btn" data-index="${i}"><span class="material-icons">delete</span></button>
+            </div>`).join("");
+          document.querySelectorAll(".delete-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+              const idx = btn.getAttribute("data-index");
+              sensor_steps.splice(idx, 1);
+              rendersensor_steps();
+            });
+          });
+        }
+        addBtn.addEventListener("click", () => {
+          sensor_steps.push({ step: motorSteps[1] });
+          rendersensor_steps();
+        });
+        rendersensor_steps();
       }
-    });
-    renderLevels();
-  }
 
-  // Threshold slider
-  if (step.threshold) {
-    const slider = document.getElementById("thresholdSlider");
-    const valueDisplay = document.getElementById("thresholdValue");
-    slider.addEventListener("input", () => {
-      valueDisplay.innerText = `${slider.value}%`;
-    });
-  }
-
-  // Schedules
-  if (step.schedules) {
-    const addBtn = document.getElementById("addScheduleBtn");
-    const list = document.getElementById("scheduleList");
-
-    function renderSchedules() {
-      list.innerHTML = schedules.map((sch, i) => `
-        <div class="schedule-item">
-          <div><strong>${sch.time}</strong> - Motor ${sch.motor} → Level ${sch.level}</div>
-          <button class="delete-btn" data-index="${i}"><span class="material-icons">delete</span></button>
-        </div>
-      `).join("");
-      document.querySelectorAll(".delete-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-          const index = btn.getAttribute("data-index");
-          schedules.splice(index, 1);
-          renderSchedules();
+      // Threshold
+      if (step.threshold) {
+        const slider = document.getElementById("thresholdSlider");
+        const val = document.getElementById("thresholdValue");
+        slider.addEventListener("input", () => {
+          threshold = parseInt(slider.value);
+          val.textContent = `${threshold}%`;
         });
-      });
-    }
+      }
 
-    addBtn.addEventListener("click", () => {
-      const hour = prompt("Enter hour (0–23):", "8");
-      const minute = prompt("Enter minute (0–59):", "30");
-      const motor = prompt("Select motor (1 or 2):", "1");
-      const level = prompt("Select level (e.g., 1, 2, 3):", "1");
-      if (hour && minute && motor && level) {
-        const time = `${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`;
-        schedules.push({ time, motor, level });
+      // Schedules
+      if (step.schedules) {
+        const timeInput = document.getElementById("scheduleTime");
+        const motorSelect = document.getElementById("scheduleMotor");
+        const sensor_stepselect = document.getElementById("scheduleLevel");
+        const addBtn = document.getElementById("addScheduleBtn");
+        const list = document.getElementById("scheduleList");
+
+        sensor_stepselect.innerHTML = sensor_steps.length
+          ? sensor_steps.map((_, i) => `<option value="${i + 1}">Level ${i + 1}</option>`).join("")
+          : `<option disabled>No sensor_steps</option>`;
+
+        function renderSchedules() {
+          list.innerHTML = schedules.map((s, i) => `
+            <div class="schedule-item">
+              <div><strong>${s.time}</strong> — Motor ${s.motor} → Level ${s.level}</div>
+              <button class="delete-btn" data-index="${i}"><span class="material-icons">delete</span></button>
+            </div>`).join("");
+          document.querySelectorAll(".delete-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+              const idx = btn.getAttribute("data-index");
+              schedules.splice(idx, 1);
+              renderSchedules();
+            });
+          });
+        }
+
+        addBtn.addEventListener("click", () => {
+          if (!timeInput.value || !sensor_stepselect.value || !motorSelect.value) return;
+          schedules.push({ time: timeInput.value, motor: motorSelect.value, level: sensor_stepselect.value });
+          renderSchedules();
+          timeInput.value = "";
+        });
+
         renderSchedules();
       }
+
+      if (step.summary) {
+        const box = document.getElementById("summaryBox");
+
+        // Always reflect calibration from saved config
+        const motor1Steps = config.motors[0] ?? motorSteps[1];
+        const motor2Steps = config.motors[1] ?? motorSteps[2];
+
+        box.innerHTML = `
+          <div class="summary-section">
+            <strong>Calibration</strong>
+            Normal: ${motor1Steps} steps<br>
+            Blackout: ${motor2Steps} steps
+          </div>
+          <div class="summary-section">
+            <strong>Levels</strong>
+            ${sensor_steps.length ? sensor_steps.map((l, i) => `Level ${i + 1}: ${l.step} steps`).join("<br>") : "No sensor_steps added"}
+          </div>
+          <div class="summary-section">
+            <strong>Light Threshold</strong> ${threshold}%
+          </div>
+          <div class="summary-section">
+            <strong>Schedules</strong>
+            ${schedules.length ? schedules.map(s => `${s.time} → Motor ${s.motor}, Level ${s.level}`).join("<br>") : "No schedules added"}
+          </div>
+        `;
+
+        document.getElementById("saveBtn").addEventListener("click", saveConfig);
+      }
+    }
+
+    function changeStep(delta, motor) {
+      motorSteps[motor] = motorSteps[motor] + delta;
+      document.querySelectorAll(`#motorStep${motor}`).forEach(el => el.textContent = motorSteps[motor]);
+    }
+
+    document.getElementById("prevBtn").addEventListener("click", () => {
+      if (currentStep > 0) currentStep--;
+      renderStep();
     });
-    renderSchedules();
-  }
-}
 
-function changeAngle(delta) {
-  motorAngle = Math.max(0, motorAngle + delta);
-  document.querySelectorAll("#motorAngle").forEach(el => el.textContent = motorAngle);
-}
+    document.getElementById("nextBtn").addEventListener("click", () => {
+      if (currentStep === 1) { 
+        config.motors[0] = motorSteps[1];
+      }
+      if (currentStep === 2) { 
+        config.motors[1] = motorSteps[2];
+      }
 
-document.getElementById("prevBtn").addEventListener("click", () => {
-  if (currentStep > 0) currentStep--;
-  renderStep();
-});
+      if (currentStep < steps.length - 1) currentStep++;
+      renderStep();
+    });
 
-document.getElementById("nextBtn").addEventListener("click", () => {
-  if (currentStep < steps.length - 1) currentStep++;
-  renderStep();
-});
-
-renderStep();
-</script>
+    renderStep();
+  </script>
 </body>
 </html>
 
