@@ -34,9 +34,9 @@
     overflow-y: auto;
   }
 
-  h1 { font-size: 1.4rem; margin-bottom: 0.3rem; }
-  h2 { font-size: 1.2rem; margin-bottom: 1rem; }
-  p { font-size: 1rem; line-height: 1.4; color: #222; }
+  h1 { font-size: 1.8rem; margin-bottom: 0.3rem; }
+  h2 { font-size: 1.6rem; margin-bottom: 1rem; }
+  p { font-size: 1.4rem; line-height: 1.4; color: #222; }
 
   .nav {
     display: flex;
@@ -51,7 +51,7 @@
     cursor: pointer;
   }
   .arrow-btn .material-icons {
-    font-size: 42px;
+    font-size: 60px;
     color: #3b228a;
   }
 
@@ -60,7 +60,7 @@
     flex-direction: column;
     align-items: center;
     margin-top: 1rem;
-    gap: 0.5rem;
+    gap: 1.5rem;
   }
 
   .action-btn {
@@ -69,7 +69,7 @@
     border: none;
     border-radius: 10px;
     padding: 0.75rem 1.5rem;
-    font-size: 1rem;
+    font-size: 1.3rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -218,7 +218,7 @@
       },
       {
         title: "Smart Shade Setup",
-        subtitle: "sensor_steps",
+        subtitle: "Levels",
         body: `
           Move the normal blind and tap “Add Level” to store a position.<br><br>
           <b>Normal Motor Step:</b> <span id="motorStep1">${motorSteps[1]}</span><br><br>
@@ -327,7 +327,7 @@
 
         sensor_stepselect.innerHTML = sensor_steps.length
           ? sensor_steps.map((_, i) => `<option value="${i + 1}">Level ${i + 1}</option>`).join("")
-          : `<option disabled>No sensor_steps</option>`;
+          : `<option disabled>No Levels</option>`;
 
         function renderSchedules() {
           list.innerHTML = schedules.map((s, i) => `
