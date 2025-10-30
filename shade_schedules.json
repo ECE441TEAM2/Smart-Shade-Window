@@ -1,0 +1,13 @@
+[
+	{
+		"time": "12:00",
+		"motor": "sunshade",
+		"level": "1"
+	},
+	{
+		"time": "16:13",
+		"motor": "blackout",
+		"level": "4"
+	}
+]
+

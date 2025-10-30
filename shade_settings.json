@@ -6,14 +6,14 @@
         1,
         1
     ],
-    "op_mode": "auto",
-    "active_shade": "sunshade",
-    "step": 997,
+    "op_mode": "schedule",
+    "active_shade": "blackout",
+    "step": 150,
     "sensor_steps": [
-        200,
-        400,
-        600,
+        1000,
         800,
-        1000
+        600,
+        400,
+        200
     ]
 }
