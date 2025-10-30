@@ -11,6 +11,7 @@ import json
 import os
 from flask import Flask, jsonify, request, send_from_directory
 import threading
+import datetime
 
 # set up logging
 logging.basicConfig(
@@ -42,11 +43,14 @@ running = True # main loop control variable, is set to False when the user press
     # but it would be better to just periodically save the settings since in most cases, if the device shuts down,
     # it will be unexpected (power loss, crash, etc)
 
+# for the schedule mode, keep track of when each scheduled movement was last executed, to not execute it multiple times
+last_schedule_executions = {}
+
 # Set up Flask, which manages the web app and its communications
 app = Flask(__name__, static_folder="webapp")
 
-# Save the active setup settings to a file, to be loaded on next startup.
 def save_settings():
+    """Saves the active setup settings to a file, to be loaded on next startup."""
     sensor_mask = sensor_mask_helper()
     settings = {
         "sensor_mask": sensor_mask,
@@ -55,7 +59,6 @@ def save_settings():
         "step": step,
         "sensor_steps": sensor_steps
     }
-
     try:
         with open(SETTINGS_FILE, "w") as file:
             json.dump(settings, file, indent=4)
@@ -63,10 +66,9 @@ def save_settings():
     except Exception as e:
         logging.error(f"Failed to save settings: {e}")
 
-# load the previously saved setup settings from file, filling in global variables as necessary.
-# also check how many sensors are currently being used, if it doesn't match the
-# previous settings, force the user to run setup again
 def load_settings():
+    """Loads settings from SETTINGS_FILE.
+    If the file does not exist, or if the quantity or wiring of the sensors does not match previously configured settings, forces setup to run."""
     global step, active_shade, op_mode, sensor_steps
 
     if not os.path.exists(SETTINGS_FILE):
@@ -91,12 +93,13 @@ def load_settings():
     except Exception as e:
         logging.error(f"Failed to load settings: {e}")
 
-# returns an array which replaces every sensor instance in the array with just a 1, which is actually saveable to json
 def sensor_mask_helper():
+    """Returns an array which replaces every sensor instance in the array with just a 1, which can be saved to JSON."""
     return [None if x is None else 1 for x in sensor_array]
 
-# propagate sensor array
 def scan_mux():
+    """Scans each channel of the multiplexer for connected VEML7700 sensors.
+    Updates the global sensor_array with instances of detected sensors."""
     count = 0
     for channel in range(CHANNELS):
         logging.debug(f"scan_mux: attempting to access channel {channel}")
@@ -113,8 +116,8 @@ def scan_mux():
     logging.info(f"scan_mux: {count} sensors were detected!")
     return
 
-# returns an array of the current lux readings from all sensors
 def read_sensors():
+    """Returns an array of the current lux readings from all sensors."""
     out = [None] * CHANNELS
     for i, sensor in enumerate(sensor_array):
         if sensor is None:
@@ -127,8 +130,13 @@ def read_sensors():
     logging.debug(f"read_sensors: Lux levels were retrieved: {out}")
     return out
 
-# given a new step value, move the motor to that step
-def move_motor_to_step(new_step):
+def move_motor_to_step(new_step, safety=True):
+    """Moves the active shade's motor to the specified step position.
+    If safety is True, the motor will not move beyond the limits of the shade (0 <= step <= sensor_steps[0])"""
+    if safety == True:
+        if new_step < 0 or new_step > sensor_steps[0]:
+            logging.warning(f"move_motor_to_step: Attempted to move to invalid step {new_step} while safety was active. Movement aborted.")
+            return
     global step
     delta = new_step - step
     logging.debug(f"move_motor_to_step: Moving from step {step} to {new_step} (delta {delta})")
@@ -152,10 +160,9 @@ def move_motor_to_step(new_step):
             time.sleep(0.01)
     return
 
-# Switches the currently active blind to the the other blind.
-# The original blind is moved back to its starting point (0) and the new blind moves
-# to the same step position as the original blind.
 def swap_blind():
+    """Switches the currently active blind to the the other blind.
+    The original blind is moved back to its starting point (step 0) and the new blind moves to the same step position as the original blind."""
     global active_shade
     global step
 
@@ -174,14 +181,14 @@ def swap_blind():
     logging.debug(f"swap_blind: Now using {active_shade} blind.")
     return
 
-# Uses the web app to set up variables used by the other modes.
 def setup_mode():
+    """Uses the web app to set up variables used by the other modes."""
     # NOT YET IMPLEMENTED
     pass
 
-# Iterates through each sensor's readings from top to bottom.
-# For the first one that it finds is too bright, the blind is moved to match that sensor's height.
 def automatic_mode():
+    """Iterates through each sensor's readings from top to bottom.
+    For the first one that it finds is too bright, the blind is moved to match that sensor's height."""
     for i, lux in enumerate(read_sensors()):
         if lux is None:
             continue
@@ -190,10 +197,58 @@ def automatic_mode():
             move_motor_to_step(sensor_steps[i])
             return
 
-# Follows the schedule imported during setup/created by the web app.
 def schedule_mode():
-    # NOT YET IMPLEMENTED
-    pass
+    """Checks SCHEDULE_FILE and moves the blind to certain positions in accordance with scheduled events."""
+    global active_shade, step, sensor_steps
+
+    # parse the current time
+    now = datetime.datetime.now()
+    current_time = now.strftime("%H:%M")
+
+    # load the schedule file
+    try:
+        with open(SCHEDULE_FILE, "r") as file:
+            schedules = json.load(file)
+    except FileNotFoundError:
+        logging.info("schedule_mode: No schedule file found. Skipping schedule mode.")
+        return
+    except json.JSONDecodeError as e:
+        logging.error(f"schedule_mode: Failed to parse schedule file: {e}")
+        return
+
+    # iterate through the schedule list to access each scheduled action
+    for entry in schedules:
+        scheduled_time = entry["time"]
+        scheduled_shade = entry["motor"]
+        scheduled_level = entry["level"]
+
+        # format a schedule ID for tracking last execution
+        schedule_id = f"{scheduled_time}_{scheduled_shade}_{scheduled_level}"
+
+        # skip if this schedule has already been executed today
+        last_run_date = last_schedule_executions.get(schedule_id)
+        if last_run_date == now.strftime("%Y-%m-%d"):
+            continue
+
+        if scheduled_time == current_time:
+            logging.info(f"schedule_mode: Executing scheduled move at {scheduled_time}: {scheduled_shade} → Level {scheduled_level}")
+
+        # Switch blinds if needed
+        if active_shade != scheduled_shade:
+            swap_blind()
+
+        # If level is 5, move to step 0 (fully open)
+        if scheduled_level == 5:
+            move_motor_to_step(0)
+        # Else, move to the corresponding sensor step
+        elif 0 <= scheduled_level < len(sensor_steps):
+            move_motor_to_step(sensor_steps[scheduled_level])
+        else:
+            logging.warning(f"schedule_mode: Invalid level {scheduled_level}, skipping.")
+
+        # Mark this schedule as executed today
+        last_schedule_executions[schedule_id] = now.strftime("%Y-%m-%d")
+
 @app.route("/")
 def serve_index():
     """Serve the HTML webapp."""
@@ -201,7 +256,7 @@ def serve_index():
 
 @app.route("/api/move", methods=["POST"])
 def api_move():
-    """Move blinds up or down."""
+    """Service webapp request to move the blind up/down."""
     data = request.json
     direction = data.get("direction")
     steps = int(data.get("steps", 10))
@@ -213,7 +268,7 @@ def api_move():
 
 @app.route("/api/mode", methods=["POST"])
 def api_mode():
-    """Change operation mode (auto/manual/schedule/setup)."""
+    """Service webapp request to change operation mode (auto/manual/schedule/setup)."""
     global op_mode
     op_mode = request.json.get("mode", "auto")
     logging.info(f"Mode switched to {op_mode}")
@@ -221,18 +276,18 @@ def api_mode():
 
 @app.route("/api/swap", methods=["POST"])
 def api_swap():
-    """Swap between blackout and sunshade blinds."""
+    """Service webapp request to swap between blackout and sunshade blinds."""
     swap_blind()
     return jsonify({"status": "ok", "active_shade": active_shade})
 
 @app.route("/api/sensors", methods=["GET"])
 def api_sensors():
-    """Return current sensor readings."""
+    """Service webapp request to return current sensor readings."""
     return jsonify({"readings": read_sensors()})
 
 @app.route("/api/save", methods=["POST"])
 def api_save():
-    """Save configuration files from the webapp."""
+    """Service webapp request to save configuration files."""
     data = request.json
     try:
         with open(SETTINGS_FILE, "w") as f:
@@ -247,7 +302,7 @@ def api_save():
 
 @app.route("/api/status", methods=["GET"])
 def api_status():
-    """Return current app status."""
+    """Service webapp request to return current app status."""
     return jsonify({
         "mode": op_mode,
         "active_shade": active_shade,
@@ -255,6 +310,7 @@ def api_status():
     })
 
 def control_loop():
+    """Main control loop which runs the blind operation according to the selected mode."""
     global running
     while running:
         logging.debug(f"main: Blind is currently operating in {op_mode} mode")
