@@ -233,18 +233,25 @@ def schedule_mode():
         if scheduled_time == current_time:
             logging.info(f"schedule_mode: Executing scheduled move at {scheduled_time}: {scheduled_shade} → Level {scheduled_level}")
 
+        # Convert level to int safely
+        try:
+            int_level = int(scheduled_level)
+        except ValueError:
+            logging.error(f"Invalid level in schedule: {scheduled_level}")
+            continue
+
         # Switch blinds if needed
         if active_shade != scheduled_shade:
             swap_blind()
 
         # If level is 5, move to step 0 (fully open)
-        if scheduled_level == 5:
+        if int_level == 5:
             move_motor_to_step(0)
         # Else, move to the corresponding sensor step
-        elif 0 <= scheduled_level < len(sensor_steps):
-            move_motor_to_step(sensor_steps[scheduled_level])
+        elif 0 <= int_level < len(sensor_steps):
+            move_motor_to_step(sensor_steps[int_level])
         else:
-            logging.warning(f"schedule_mode: Invalid level {scheduled_level}, skipping.")
+            logging.warning(f"schedule_mode: Invalid level {int_level}, skipping.")
 
         # Mark this schedule as executed today
         last_schedule_executions[schedule_id] = now.strftime("%Y-%m-%d")
