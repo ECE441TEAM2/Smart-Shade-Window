@@ -194,65 +194,6 @@ def automatic_mode():
 def schedule_mode():
     # NOT YET IMPLEMENTED
     pass
-@app.route("/")
-def serve_index():
-    """Serve the HTML webapp."""
-    return send_from_directory("webapp", "index.html")
-
-@app.route("/api/move", methods=["POST"])
-def api_move():
-    """Move blinds up or down."""
-    data = request.json
-    direction = data.get("direction")
-    steps = int(data.get("steps", 10))
-    if direction == "up":
-        move_motor_to_step(step - steps)
-    elif direction == "down":
-        move_motor_to_step(step + steps)
-    return jsonify({"status": "ok", "current_step": step})
-
-@app.route("/api/mode", methods=["POST"])
-def api_mode():
-    """Change operation mode (auto/manual/schedule/setup)."""
-    global op_mode
-    op_mode = request.json.get("mode", "auto")
-    logging.info(f"Mode switched to {op_mode}")
-    return jsonify({"status": "ok", "mode": op_mode})
-
-@app.route("/api/swap", methods=["POST"])
-def api_swap():
-    """Swap between blackout and sunshade blinds."""
-    swap_blind()
-    return jsonify({"status": "ok", "active_shade": active_shade})
-
-@app.route("/api/sensors", methods=["GET"])
-def api_sensors():
-    """Return current sensor readings."""
-    return jsonify({"readings": read_sensors()})
-
-@app.route("/api/save", methods=["POST"])
-def api_save():
-    """Save configuration files from the webapp."""
-    data = request.json
-    try:
-        with open(SETTINGS_FILE, "w") as f:
-            json.dump(data.get("settings"), f, indent=4)
-        with open(SCHEDULE_FILE, "w") as f:
-            json.dump(data.get("schedules"), f, indent=4)
-        logging.info("Config and schedules saved from webapp.")
-        return jsonify({"status": "ok"})
-    except Exception as e:
-        logging.error(f"Save failed: {e}")
-        return jsonify({"status": "error", "message": str(e)})
-
-@app.route("/api/status", methods=["GET"])
-def api_status():
-    """Return current app status."""
-    return jsonify({
-        "mode": op_mode,
-        "active_shade": active_shade,
-        "step": step
-    })
 
 def control_loop():
     global running
@@ -270,11 +211,11 @@ def control_loop():
     logging.info("Goodbye!")
     
 if __name__ == "__main__":
-    # propagate sensor array
-    scan_mux()
-    # load settings from file, entering setup if necessary
-    load_settings()
-    # Start the main control loop in its own thread
+	# propagate sensor array
+	scan_mux()
+	# load settings from file, entering setup if necessary
+	load_settings()
+	# Start the main control loop in its own thread
     threading.Thread(target=control_loop, daemon=True).start()
     # start web app
     app.run(host="0.0.0.0", port=5000, debug=False)
