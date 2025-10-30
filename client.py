@@ -226,6 +226,7 @@ def schedule_mode():
         # format a schedule ID for tracking last execution
         schedule_id = f"{scheduled_time}_{scheduled_shade}_{scheduled_level}"
         logging.debug(f"schedule_mode: Now checking schedule entry: {schedule_id}")
+        logging.debug(f"schedule_mode: Current time is {current_time}, scheduled time is {scheduled_time}")
 
         # skip if this schedule has already been executed today
         last_run_date = last_schedule_executions.get(schedule_id)
