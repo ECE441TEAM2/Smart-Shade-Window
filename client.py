@@ -215,6 +215,7 @@ def schedule_mode():
     except json.JSONDecodeError as e:
         logging.error(f"schedule_mode: Failed to parse schedule file: {e}")
         return
+    logging.debug("schedule_mode: Schedule file loaded successfully.")
 
     # iterate through the schedule list to access each scheduled action
     for entry in schedules:
@@ -224,6 +225,7 @@ def schedule_mode():
 
         # format a schedule ID for tracking last execution
         schedule_id = f"{scheduled_time}_{scheduled_shade}_{scheduled_level}"
+        logging.debug(f"schedule_mode: Now checking schedule entry: {schedule_id}")
 
         # skip if this schedule has already been executed today
         last_run_date = last_schedule_executions.get(schedule_id)
@@ -231,7 +233,7 @@ def schedule_mode():
             continue
 
         if scheduled_time == current_time:
-            logging.info(f"schedule_mode: Executing scheduled move at {scheduled_time}: {scheduled_shade} → Level {scheduled_level}")
+            logging.info(f"schedule_mode: Executing scheduled move at {scheduled_time}: {scheduled_shade} to Level {scheduled_level}")
 
         # Convert level to int safely
         try:
