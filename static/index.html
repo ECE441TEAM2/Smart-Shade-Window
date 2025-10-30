@@ -168,20 +168,50 @@
     };
 
     async function saveConfig() {
-      config.motors;
-      config.sensor_steps = sensor_steps;
+      // Prepare main config (without schedules)
+      config.sensor_steps = sensor_steps.map(s => s.step);
       config.threshold = threshold;
-      config.schedules = schedules;
+      config.motors = [config.motors[0], config.motors[1]];
 
+      // Create the main configuration file
+      const mainBlob = new Blob(
+        [JSON.stringify({
+          motors: config.motors,
+          sensor_steps: config.sensor_steps,
+          threshold: config.threshold
+        }, null, 2)],
+        { type: "application/json" }
+      );
+
+      const mainUrl = URL.createObjectURL(mainBlob);
+      const mainLink = document.createElement("a");
+      mainLink.href = mainUrl;
+      mainLink.download = "shade_settings.json";
+      mainLink.click();
+
+      // Convert schedules motor values to readable names
+      const readableSchedules = schedules.map(s => ({
+        time: s.time,
+        motor: Number(s.motor) === 1 ? "sunshade" : "blackout",
+        level: s.level
+      }));
+
+      // Create separate schedules file
+      const schedulesBlob = new Blob(
+        [JSON.stringify(readableSchedules, null, 2)],
+        { type: "application/json" }
+      );
+
+      const schedulesUrl = URL.createObjectURL(schedulesBlob);
+      const schedulesLink = document.createElement("a");
+      schedulesLink.href = schedulesUrl;
+      schedulesLink.download = "shade_schedules.json";
+      schedulesLink.click();
+
+      // Show save confirmation message
       const saveMsg = document.getElementById("saveNotice");
-      const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "shade_settings.json";
-      a.click();
-      saveMsg.textContent = "✅ Configuration saved as JSON file.";
-      setTimeout(() => (saveMsg.textContent = ""), 3000);
+      saveMsg.textContent = "✅ Configuration and schedules saved as JSON files.";
+      setTimeout(() => (saveMsg.textContent = ""), 4000);
     }
 
     const steps = [
@@ -192,10 +222,9 @@
       },
       {
         title: "Smart Shade Setup",
-        subtitle: "Calibration (Normal Blind)",
+        subtitle: "Calibration (Sunshade)",
         body: `
-          Set the normal blind <b>FULLY UP</b> by using the arrow keys below<br><br>
-          <b>Normal Motor Step:</b> <span id="motorStep1">${motorSteps[1]}</span><br><br>
+          Set the sunshade <b>FULLY UP</b> by using the arrow keys below<br><br>
           <div class="vertical-controls">
             <button class="arrow-btn" onclick="changeStep(-10,1)"><span class="material-icons">arrow_upward</span></button>
             <button class="arrow-btn" onclick="changeStep(10,1)"><span class="material-icons">arrow_downward</span></button>
@@ -205,10 +234,9 @@
       },
       {
         title: "Smart Shade Setup",
-        subtitle: "Calibration (Blackout Blind)",
+        subtitle: "Calibration (Blackout)",
         body: `
-          Set the blackout blind <b>FULLY UP</b> by using the arrow keys below<br><br>
-          <b>Blackout Motor Step:</b> <span id="motorStep2">${motorSteps[2]}</span><br><br>
+          Set the blackout <b>FULLY UP</b> by using the arrow keys below<br><br>
           <div class="vertical-controls">
             <button class="arrow-btn" onclick="changeStep(-10,2)"><span class="material-icons">arrow_upward</span></button>
             <button class="arrow-btn" onclick="changeStep(10,2)"><span class="material-icons">arrow_downward</span></button>
@@ -218,15 +246,15 @@
       },
       {
         title: "Smart Shade Setup",
-        subtitle: "Levels",
+        subtitle: "Sensor Position",
         body: `
-          Move the normal blind and tap “Add Level” to store a position.<br><br>
+          Move the sunshade and tap “Add Sensor” to store the sensor position.<br><br>
           <b>Normal Motor Step:</b> <span id="motorStep1">${motorSteps[1]}</span><br><br>
           <div class="vertical-controls">
             <button class="arrow-btn" onclick="changeStep(-10,1)"><span class="material-icons">arrow_upward</span></button>
             <button class="arrow-btn" onclick="changeStep(10,1)"><span class="material-icons">arrow_downward</span></button>
           </div>
-          <button id="addLevelBtn" class="action-btn"><span class="material-icons">add</span>Add Level</button>
+          <button id="addLevelBtn" class="action-btn"><span class="material-icons">add</span>Add Sensor</button>
           <div id="levelList" class="level-list"></div>
         `,
         sensor_steps: true,
@@ -252,7 +280,7 @@
           <div style="display:flex; flex-direction:column;justify-content:center;align-items:center;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;">
             <input type="time" id="scheduleTime" />
             <select id="scheduleMotor">
-              <option value="1">Normal</option>
+              <option value="1">Sunshade</option>
               <option value="2">Blackout</option>
             </select>
             <select id="scheduleLevel"></select>
@@ -289,7 +317,7 @@
         function rendersensor_steps() {
           list.innerHTML = sensor_steps.map((l, i) => `
             <div class="level-item">
-              <div><strong>Level ${i + 1}</strong>: ${l.step} steps</div>
+              <div><strong>Sensor ${i + 1}</strong>: ${l.step} steps</div>
               <button class="delete-btn" data-index="${i}"><span class="material-icons">delete</span></button>
             </div>`).join("");
           document.querySelectorAll(".delete-btn").forEach(btn => {
@@ -326,13 +354,13 @@
         const list = document.getElementById("scheduleList");
 
         sensor_stepselect.innerHTML = sensor_steps.length
-          ? sensor_steps.map((_, i) => `<option value="${i + 1}">Level ${i + 1}</option>`).join("")
-          : `<option disabled>No Levels</option>`;
+          ? sensor_steps.map((_, i) => `<option value="${i + 1}">Sensor ${i + 1}</option>`).join("")
+          : `<option disabled>No Sensors added</option>`;
 
         function renderSchedules() {
           list.innerHTML = schedules.map((s, i) => `
             <div class="schedule-item">
-              <div><strong>${s.time}</strong> — Motor ${s.motor} → Level ${s.level}</div>
+              <div><strong>${s.time}</strong> — ${s.motor === "1" ? "Sunshade" : "Blackout"} → Sensor Level ${s.level}</div>
               <button class="delete-btn" data-index="${i}"><span class="material-icons">delete</span></button>
             </div>`).join("");
           document.querySelectorAll(".delete-btn").forEach(btn => {
@@ -364,19 +392,19 @@
         box.innerHTML = `
           <div class="summary-section">
             <strong>Calibration</strong>
-            Normal: ${motor1Steps} steps<br>
-            Blackout: ${motor2Steps} steps
+            Sunshade: ${motor1Steps} → 0 steps<br>
+            Blackout: ${motor2Steps} → 0 steps
           </div>
           <div class="summary-section">
             <strong>Levels</strong>
-            ${sensor_steps.length ? sensor_steps.map((l, i) => `Level ${i + 1}: ${l.step} steps`).join("<br>") : "No sensor_steps added"}
+            ${sensor_steps.length ? sensor_steps.map((l, i) => `Sensor ${i + 1}: ${l.step} steps`).join("<br>") : "No Sensors added"}
           </div>
           <div class="summary-section">
             <strong>Light Threshold</strong> ${threshold}%
           </div>
           <div class="summary-section">
             <strong>Schedules</strong>
-            ${schedules.length ? schedules.map(s => `${s.time} → Motor ${s.motor}, Level ${s.level}`).join("<br>") : "No schedules added"}
+            ${schedules.length ? schedules.map(s => `${s.time} → ${s.motor === "1" ? "Sunshade" : "Blackout"}, Sensor ${s.level}`).join("<br>") : "No schedules added"}
           </div>
         `;
 
@@ -397,9 +425,11 @@
     document.getElementById("nextBtn").addEventListener("click", () => {
       if (currentStep === 1) { 
         config.motors[0] = motorSteps[1];
+        motorSteps[1] = 0;
       }
       if (currentStep === 2) { 
         config.motors[1] = motorSteps[2];
+        motorSteps[2] = 0;
       }
 
       if (currentStep < steps.length - 1) currentStep++;
