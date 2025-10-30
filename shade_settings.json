@@ -7,8 +7,8 @@
         1
     ],
     "op_mode": "auto",
-    "active_shade": "blackout",
-    "step": 396,
+    "active_shade": "sunshade",
+    "step": 997,
     "sensor_steps": [
         200,
         400,

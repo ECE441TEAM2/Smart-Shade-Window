@@ -10,7 +10,7 @@ import logging
 import json
 import os
 from flask import Flask, jsonify, request, send_from_directory
-from threading import Thread
+import threading
 
 # set up logging
 logging.basicConfig(
@@ -131,10 +131,10 @@ def read_sensors():
 def move_motor_to_step(new_step):
     global step
     delta = new_step - step
-    logging.debug(f"move_motor_to_step: Moving from step {step} to {new_step} (delta {var1})")
+    logging.debug(f"move_motor_to_step: Moving from step {step} to {new_step} (delta {delta})")
     # if positive, move down
-    if var1 > 0:
-        for i in range(var1):
+    if delta > 0:
+        for i in range(delta):
             if active_shade == "sunshade":
                 motor_shield.stepper1.onestep(direction=stepper.BACKWARD, style=stepper.SINGLE)
             else:
@@ -142,8 +142,8 @@ def move_motor_to_step(new_step):
             step += 1
             time.sleep(0.01)
     # if negative, move up
-    elif var1 < 0:
-        for i in range(-var1):
+    elif delta < 0:
+        for i in range(-delta):
             if active_shade == "sunshade":
                 motor_shield.stepper1.onestep(direction=stepper.FORWARD, style=stepper.SINGLE)
             else:
