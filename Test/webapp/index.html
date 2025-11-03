@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Shade Controller</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --accent: #2563eb;
+      --text: #1e293b;
+      --muted: #94a3b8;
+      --card: #ffffff;
+      --shadow: rgba(0,0,0,0.1);
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      width: 100%;
+      max-width: 420px;
+      background: var(--card);
+      box-shadow: 0 4px 10px var(--shadow);
+      border-radius: 16px;
+      padding: 24px;
+      margin-top: 20px;
+      box-sizing: border-box;
+    }
+    h1, h2 {
+      margin: 0 0 12px 0;
+      text-align: center;
+    }
+    .muted-text { color: var(--muted); font-size: 14px; text-align:center; margin-bottom: 12px;}
+    .action-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: center;
+    }
+    .action-btn:hover { background: #1d4ed8; }
+    .mode-btn {
+      width: 30%;
+      padding: 10px 0;
+      text-align: center;
+      border-radius: 12px;
+      background: #e2e8f0;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .mode-btn.active { background: var(--accent); color: white; }
+    .mode-footer {
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .mode-panel {
+      display: none;
+      margin-top: 12px;
+      text-align: center;
+    }
+    .mode-panel.active { display: block; }
+    .arrow-btn {
+      border: none;
+      background: var(--accent);
+      color: white;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    .schedule-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .schedule-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f1f5f9;
+      padding: 8px;
+      border-radius: 8px;
+    }
+    .delete-btn {
+      border: none;
+      background: #ef4444;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+      padding: 4px 8px;
+    }
+    .nav {
+      display: flex;
+      justify-content: flex-end;
+      width: 100%;
+      max-width: 420px;
+      margin-top: 12px;
+      padding: 0 16px;
+    }
+    .gear {
+      cursor: pointer;
+      font-size: 22px;
+    }
+  </style>
+</head>
+<body>
+  <div class="nav" id="nav">
+    <span id="settingsBtn" class="gear">⚙️</span>
+  </div>
+  <div class="container" id="container">
+    <!-- Setup wizard will appear here -->
+  </div>
+
+  <script>
+    let sensor_steps = [];
+    let schedules = [];
+    let currentMode = "auto";
+
+    /* -------------------------
+       SETUP WIZARD
+       ------------------------- */
+    function renderSetup() {
+      document.getElementById('nav').style.display = 'none';
+      document.getElementById('container').innerHTML = `
+        <h1>Smart Shade Setup</h1>
+        <div class="muted-text">Configure sensor steps and schedules</div>
+        <div>
+          <h2>Sensor Steps</h2>
+          <div id="sensorList" class="schedule-list"></div>
+          <button class="action-btn" id="addSensorBtn">Add Sensor</button>
+        </div>
+        <div style="margin-top:16px;">
+          <h2>Schedules</h2>
+          <div id="scheduleList" class="schedule-list"></div>
+          <button class="action-btn" id="addScheduleBtn">Add Schedule</button>
+        </div>
+        <div style="margin-top:20px;text-align:center;">
+          <button class="action-btn" id="saveConfigBtn">Save Configuration</button>
+        </div>
+      `;
+
+      const sensorList = document.getElementById('sensorList');
+      const schedList = document.getElementById('scheduleList');
+
+      function renderSensors() {
+        sensorList.innerHTML = sensor_steps.map((s,i)=>`
+          <div class="schedule-item">
+            <span>Sensor ${i+1}</span>
+            <input type="number" value="${s.step}" id="step${i}" style="width:60px;">
+            <button class="delete-btn" data-i="${i}">X</button>
+          </div>
+        `).join('');
+        sensorList.querySelectorAll('.delete-btn').forEach(btn=>{
+          btn.onclick=()=>{
+            sensor_steps.splice(btn.dataset.i,1);
+            renderSensors();
+          };
+        });
+        sensorList.querySelectorAll('input').forEach((inp,i)=>{
+          inp.onchange=()=>sensor_steps[i].step=Number(inp.value)||0;
+        });
+      }
+
+      function renderSchedules() {
+        schedList.innerHTML = schedules.map((s,i)=>`
+          <div class="schedule-item">
+            <input type="time" id="time${i}" value="${s.time}">
+            <select id="motor${i}">
+              <option value="sunshade" ${s.motor==="sunshade"?"selected":""}>Sunshade</option>
+              <option value="blackout" ${s.motor==="blackout"?"selected":""}>Blackout</option>
+            </select>
+            <input type="number" id="level${i}" value="${s.level}" min="0" style="width:50px;">
+            <button class="delete-btn" data-i="${i}">X</button>
+          </div>
+        `).join('');
+        schedList.querySelectorAll('.delete-btn').forEach(btn=>{
+          btn.onclick=()=>{
+            schedules.splice(btn.dataset.i,1);
+            renderSchedules();
+          };
+        });
+        schedList.querySelectorAll('input, select').forEach((inp)=>{
+          inp.onchange=()=>{
+            const i = Number(inp.id.match(/\d+/)[0]);
+            const field = inp.id.replace(/\d+/,'');
+            if(field==='time') schedules[i].time=inp.value;
+            if(field==='motor') schedules[i].motor=inp.value;
+            if(field==='level') schedules[i].level=inp.value;
+          };
+        });
+      }
+
+      renderSensors();
+      renderSchedules();
+
+      document.getElementById('addSensorBtn').onclick=()=>{
+        sensor_steps.push({step:0});
+        renderSensors();
+      };
+      document.getElementById('addScheduleBtn').onclick=()=>{
+        schedules.push({time:"08:00", motor:"sunshade", level:1});
+        renderSchedules();
+      };
+      document.getElementById('saveConfigBtn').onclick=saveConfiguration;
+    }
+
+    /* -------------------------
+       MAIN SCREEN
+       ------------------------- */
+    function showMainScreen() {
+      document.getElementById('nav').style.display = 'flex';
+      document.getElementById('container').innerHTML = `
+        <h1>Main Control</h1>
+        <div class="muted-text">Select operation mode</div>
+        <div style="display:flex;justify-content:space-between;margin-top:10px;">
+          <div class="mode-btn" id="manualBtn">Manual</div>
+          <div class="mode-btn active" id="autoBtn">Auto</div>
+          <div class="mode-btn" id="scheduleBtn">Schedule</div>
+        </div>
+        <div id="manualPanel" class="mode-panel">
+          <div style="margin-top:20px;">
+            <button class="arrow-btn" id="upBtn">▲</button>
+            <button class="arrow-btn" id="downBtn">▼</button>
+          </div>
+          <div style="margin-top:10px;">
+            <button class="action-btn" id="swapBtn">Swap Shade</button>
+          </div>
+        </div>
+        <div id="autoPanel" class="mode-panel active">
+          <div class="muted-text" style="margin-top:20px;">Automatic control using sensors.</div>
+        </div>
+        <div id="schedulePanel" class="mode-panel">
+          <div class="muted-text" style="margin-top:20px;">Next scheduled action shown here.</div>
+        </div>
+        <div class="mode-footer">
+          <button class="action-btn" id="saveModeBtn">💾 Save Mode</button>
+        </div>
+      `;
+
+      function switchMode(mode) {
+        currentMode = mode;
+        document.querySelectorAll('.mode-btn').forEach(btn=>btn.classList.remove('active'));
+        document.querySelectorAll('.mode-panel').forEach(p=>p.classList.remove('active'));
+        document.getElementById(mode+'Btn').classList.add('active');
+        document.getElementById(mode+'Panel').classList.add('active');
+        apiSetMode(mode);
+      }
+
+      document.getElementById('manualBtn').onclick=()=>switchMode('manual');
+      document.getElementById('autoBtn').onclick=()=>switchMode('auto');
+      document.getElementById('scheduleBtn').onclick=()=>switchMode('schedule');
+
+      document.getElementById('upBtn').onclick=()=>apiMove('up');
+      document.getElementById('downBtn').onclick=()=>apiMove('down');
+      document.getElementById('swapBtn').onclick=()=>apiSwap();
+      document.getElementById('saveModeBtn').onclick=saveModePrompt;
+
+      document.getElementById('settingsBtn').onclick=()=>showSettingsScreen();
+    }
+
+    /* -------------------------
+       SETTINGS SCREEN
+       ------------------------- */
+    function showSettingsScreen() {
+      const c = document.getElementById('container');
+      document.getElementById('nav').style.display = 'none';
+      c.innerHTML = `
+        <div>
+          <h1>Settings</h1>
+          <div class="muted-text">Adjust sensors, schedules, and recalibration</div>
+        </div>
+
+        <div style="text-align:left;width:100%;">
+          <button class="action-btn" id="recalibrateBtn">🔧 Recalibrate Shades</button>
+        </div>
+
+        <div style="margin-top:16px;text-align:left;">
+          <h2>Sensor Steps</h2>
+          <div id="settingsSensorList" class="schedule-list"></div>
+          <button class="action-btn" id="addSensorBtn">Add Sensor</button>
+        </div>
+
+        <div style="margin-top:16px;text-align:left;">
+          <h2>Schedules</h2>
+          <div id="settingsScheduleList" class="schedule-list"></div>
+          <button class="action-btn" id="addScheduleBtn2">Add Schedule</button>
+        </div>
+
+        <div class="mode-footer">
+          <button class="action-btn" id="saveSettingsBtn">💾 Save Settings</button>
+          <button class="action-btn" id="backToMainBtn">⬅️ Back</button>
+        </div>
+      `;
+
+      document.getElementById('backToMainBtn').onclick=showMainScreen;
+      document.getElementById('recalibrateBtn').onclick=()=>{ if(confirm("Recalibrate?")) renderSetup(); };
+
+      const sensorList = document.getElementById('settingsSensorList');
+      function renderSensorList() {
+        if (!sensor_steps.length) { sensorList.innerHTML = `<div class="muted-text">No sensors configured.</div>`; return; }
+        sensorList.innerHTML = sensor_steps.map((s,i)=>`
+          <div class="schedule-item">
+            <strong>Sensor ${i+1}</strong>
+            <input type="number" value="${s.step}" id="sensorInput${i}" style="width:70px;">
+            <button class="delete-btn" data-i="${i}">X</button>
+          </div>
+        `).join('');
+        sensorList.querySelectorAll('input').forEach((inp,i)=>inp.onchange=()=>sensor_steps[i].step=Number(inp.value)||0);
+        sensorList.querySelectorAll('.delete-btn').forEach(btn=>btn.onclick=()=>{sensor_steps.splice(btn.dataset.i,1);renderSensorList();});
+      }
+      renderSensorList();
+      document.getElementById('addSensorBtn').onclick=()=>{sensor_steps.push({step:0});renderSensorList();};
+
+      const schedList = document.getElementById('settingsScheduleList');
+      function renderScheduleList() {
+        if (!schedules.length) { schedList.innerHTML = `<div class="muted-text">No schedules configured.</div>`; return; }
+        schedList.innerHTML = schedules.map((s,i)=>`
+          <div class="schedule-item">
+            <input type="time" id="schedTime${i}" value="${s.time}">
+            <select id="schedMotor${i}">
+              <option value="sunshade" ${s.motor==="sunshade"?"selected":""}>Sunshade</option>
+              <option value="blackout" ${s.motor==="blackout"?"selected":""}>Blackout</option>
+            </select>
+            <input type="number" id="schedLevel${i}" value="${s.level}" style="width:50px;">
+            <button class="delete-btn" data-i="${i}">X</button>
+          </div>
+        `).join('');
+        schedules.forEach((_,i)=>{
+          document.getElementById(`schedTime${i}`).onchange=e=>schedules[i].time=e.target.value;
+          document.getElementById(`schedMotor${i}`).onchange=e=>schedules[i].motor=e.target.value;
+          document.getElementById(`schedLevel${i}`).onchange=e=>schedules[i].level=e.target.value;
+        });
+        schedList.querySelectorAll('.delete-btn').forEach(btn=>btn.onclick=()=>{schedules.splice(btn.dataset.i,1);renderScheduleList();});
+      }
+      renderScheduleList();
+      document.getElementById('addScheduleBtn2').onclick=()=>{schedules.push({time:"08:00",motor:"sunshade",level:1});renderScheduleList();};
+
+      document.getElementById('saveSettingsBtn').onclick=saveModePrompt;
+    }
+
+    /* -------------------------
+       FLASK API HELPERS
+       ------------------------- */
+    async function apiSaveAll() {
+      const payload = { settings:{ sensor_steps, mode: currentMode }, schedules };
+      const res = await fetch("/api/save", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if(data.status==="ok") alert("Saved to device!");
+      else alert("Save failed: "+data.message);
+    }
+
+    async function apiSetMode(mode) {
+      await fetch("/api/mode",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode})});
+    }
+
+    async function apiMove(direction) {
+      await fetch("/api/move",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({direction,steps:10})});
+    }
+
+    async function apiSwap() {
+      await fetch("/api/swap",{method:"POST"});
+    }
+
+    async function saveConfiguration() {
+      await apiSaveAll();
+      showMainScreen();
+    }
+
+    async function saveModePrompt() {
+      if(confirm("Save current configuration to device?")) await apiSaveAll();
+    }
+
+    /* -------------------------
+       INIT
+       ------------------------- */
+    renderSetup();
+  </script>
+</body>
+</html>
+
