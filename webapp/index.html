@@ -564,10 +564,6 @@
         ensureCorrectBlind(s.motor);
       }
 
-      if (s.id === 'sensor-position') {
-        ensureSunshadeActive();
-      }
-
       // Sensor steps
       if (s.sensor_steps) {
         const addBtn = qs('addSensorBtn'); const list = qs('sensorList');
@@ -576,6 +572,11 @@
           list.querySelectorAll('.delete').forEach(btn => btn.addEventListener('click', () => { const idx = Number(btn.getAttribute('data-index')); sensorSteps.splice(idx, 1); paint(); }));
         }
         addBtn.addEventListener('click', () => { sensorSteps.push({ step: motorSteps[1] }); paint(); }); paint();
+        // Ensure Sunshade is active BEFORE first render of this step
+        (async () => {
+          await ensureSunshadeActive();  // uses /api/swap_dumb under the hood
+          paint();
+        })();
       }
 
       // Threshold slider
