@@ -600,7 +600,25 @@
           }));
 
           const ok = await saveToPi(settings, readableSchedules);
-          saveMsg.textContent = ok ? '✅ Configuration saved to Raspberry Pi.' : '❌ Failed to save configuration.';
+          if (ok) {
+            saveMsg.textContent = '✅ Configuration saved to Raspberry Pi. Switching to manual mode...';
+            // Automatically switch mode to manual after saving
+            try {
+              await fetch('/api/mode', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mode: 'manual' }),
+              });
+              statusState.mode = 'manual';
+              setTimeout(() => {
+                showPanel();
+              }, 1500);
+            } catch (e) {
+              console.error('Failed to switch to manual mode:', e);
+            }
+          } else {
+            saveMsg.textContent = '❌ Failed to save configuration.';
+          }
           setTimeout(() => (saveMsg.textContent = ''), 4000);
         });
       }
