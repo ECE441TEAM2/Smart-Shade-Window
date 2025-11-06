@@ -181,6 +181,20 @@ def swap_blind():
     logging.debug(f"swap_blind: Now using {active_shade} blind.")
     return
 
+def swap_blind_dumb():
+    """Switches the currently active blind to the the other blind.
+    Neither blind is moved in the process."""
+    global active_shade
+
+    logging.debug(f"swap_blind_dumb: Swapping from {active_shade} blind.")
+    # Swap active blind
+    if active_shade == "sunshade":
+        active_shade = "blackout"
+    else:
+        active_shade = "sunshade"
+    logging.debug(f"swap_blind_dumb: Now using {active_shade} blind.")
+    return
+
 def setup_mode():
     """Uses the web app to set up variables used by the other modes."""
     # NOT YET IMPLEMENTED
@@ -288,6 +302,12 @@ def api_mode():
 def api_swap():
     """Service webapp request to swap between blackout and sunshade blinds."""
     swap_blind()
+    return jsonify({"status": "ok", "active_shade": active_shade})
+
+@app.route("/api/swap_dumb", methods=["POST"])
+def api_swap():
+    """Service webapp request to swap between blackout and sunshade blinds without moving the motors."""
+    swap_blind_dumb()
     return jsonify({"status": "ok", "active_shade": active_shade})
 
 @app.route("/api/sensors", methods=["GET"])

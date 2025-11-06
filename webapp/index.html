@@ -560,6 +560,10 @@
       hookHold('wUp2', -10, 2); hookHold('wDown2', 10, 2);
       hookHold('wUp1b', -10, 1); hookHold('wDown1b', 10, 1);
 
+      if (s.motor) {
+        ensureCorrectBlind(s.motor);
+      }
+
       // Sensor steps
       if (s.sensor_steps) {
         const addBtn = qs('addSensorBtn'); const list = qs('sensorList');
@@ -614,18 +618,15 @@
     function changeStep(delta, motor) {
       motorSteps[motor] = motorSteps[motor] + delta;
       document.querySelectorAll(`#motorStep${motor}, #motorStep${motor}b`).forEach(el => (el.textContent = motorSteps[motor]));
-      // Trigger backend motor movement
-      if (delta < 0) moveDuringSetup('up', motor); else moveDuringSetup('down', motor);
+      moveDuringSetup(delta < 0 ? 'up' : 'down');
     }
 	
-	function moveDuringSetup(direction, motor) {
-      ensureCorrectBlind(motor).then(() => {
-        fetch('/api/move', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ direction, steps: 10, motor }),
-        }).catch(err => console.error('Setup move failed', err));
-      });
+	function moveDuringSetup(direction) {
+      fetch('/api/move', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ direction, steps: 10 })
+      }).catch(err => console.error('Setup move failed', err));
     }
 
     async function ensureCorrectBlind(motor) {
@@ -635,7 +636,7 @@
         const active = data.active_shade;
         const desired = motor === 1 ? 'sunshade' : 'blackout';
         if (active !== desired) {
-          await fetch('/api/swap', { method: 'POST' });
+          await fetch('/api/swap_dumb', { method: 'POST' });
           await new Promise(r => setTimeout(r, 500));
         }
       } catch (e) {
