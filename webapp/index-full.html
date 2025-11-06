@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Smart Shade Setup & Main Screen</title>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+<style>
+  :root{
+    --accent:#3b228a;
+    --muted:#e6dbff;
+    --bg:#fefcff;
+    --panel:#f7f4ff;
+    --soft:#eae7f5;
+  }
+  body{
+    font-family: "Poppins", Arial, sans-serif;
+    background: var(--soft);
+    margin:0;
+    height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  /* Phone frame */
+  .phone-frame{
+    width:390px;
+    height:760px;
+    background:var(--bg);
+    border-radius:32px;
+    box-shadow:0 6px 28px rgba(0,0,0,0.15);
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+  .container{
+    padding:24px;
+    flex:1;
+    overflow:auto;
+    text-align:center;
+  }
+
+  h1{ font-size:20px; margin:6px 0; color:var(--accent); }
+  h2{ font-size:18px; margin:8px 0 18px; color:#111; }
+  p{ font-size:14px; color:#222; line-height:1.4; }
+
+  .nav{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:12px 18px;
+    border-top:1px solid rgba(0,0,0,0.03);
+  }
+  .arrow-btn{
+    background:none;
+    border:none;
+    cursor:pointer;
+  }
+  .arrow-btn .material-icons{
+    font-size:40px;
+    color:var(--accent);
+  }
+
+  .vertical-controls{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:14px;
+    margin-top:12px;
+  }
+
+  .action-btn{
+    background:var(--muted);
+    color:var(--accent);
+    border:none;
+    border-radius:10px;
+    padding:10px 16px;
+    font-size:15px;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    cursor:pointer;
+  }
+  .action-btn:hover{ filter:brightness(0.98); }
+
+  .level-list,.schedule-list{
+    max-height:170px;
+    overflow:auto;
+    width:90%;
+    margin:12px auto 0;
+  }
+  .level-item,.schedule-item{
+    background:var(--panel);
+    border-radius:8px;
+    padding:8px 12px;
+    margin:8px 0;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:14px;
+  }
+
+  .delete-btn{ background:transparent; border:none; color:#b33; cursor:pointer; }
+
+  input[type=range]{ width:80%; accent-color:#7b4cff; }
+  input[type=time], select{ padding:6px 8px; border-radius:8px; border:1px solid #ddd; }
+
+  .summary-box{
+    background:var(--panel);
+    border-radius:12px;
+    padding:12px;
+    margin-top:12px;
+    text-align:left;
+    font-size:13px;
+  }
+  .summary-section{ margin-bottom:10px; }
+  .summary-section strong{ display:block; margin-bottom:6px; color:var(--accent); }
+
+  #saveNotice{ font-size:12px; color:#555; margin-top:8px; min-height:18px; }
+
+  /* MAIN SCREEN (Figma-like) */
+  .main-screen{
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+    padding-top:28px;
+    gap:16px;
+    text-align:center;
+  }
+  .main-title{ font-size:22px; color:#111; margin-bottom:6px; }
+  .sub-title{ font-size:16px; color:#444; margin-bottom:14px; }
+
+  .mode-row{
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    margin:18px 0 6px;
+  }
+  .mode-btn{
+    background:var(--panel);
+    border-radius:10px;
+    padding:10px 14px;
+    border:none;
+    cursor:pointer;
+    font-weight:600;
+    color:var(--accent);
+    min-width:96px;
+  }
+  .mode-btn.active{
+    background:var(--accent);
+    color:#fff;
+    transform:scale(1.02);
+  }
+
+  .mode-area{
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:12px;
+  }
+
+  /* Manual controls layout */
+  .manual-controls{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:12px;
+  }
+  .big-arrows{ display:flex; gap:40px; align-items:center; justify-content:center; margin-bottom:8px; }
+  .big-arrow-btn{
+    width:64px; height:64px; border-radius:40px; border:none;
+    background:var(--panel); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; font-size:28px; color:var(--accent);
+  }
+  .motor-buttons{ display:flex; gap:14px; margin-top:6px; }
+  .motor-btn{ background:var(--panel); padding:8px 12px; border-radius:10px; border:none; cursor:pointer; }
+
+  /* Mode footer and settings */
+  .mode-footer{
+    margin-top:22px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+  }
+  .mode-indicator{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:var(--accent);
+    font-weight:700;
+  }
+  .settings-btn{
+    margin-top:10px;
+    background:var(--panel);
+    border-radius:26px;
+    padding:10px 18px;
+    border:none;
+    cursor:pointer;
+  }
+
+  /* small helpers */
+  .muted-text{ color:#6b6b6b; font-size:13px; }
+  .next-action{ color:var(--accent); font-weight:600; margin-top:4px; }
+  .controls-row{ display:flex; gap:12px; align-items:center; justify-content:center; }
+</style>
+</head>
+<body>
+  <div class="phone-frame" role="application">
+    <div class="container" id="container">
+      <div id="content"></div>
+      <div id="saveNotice"></div>
+    </div>
+
+    <div class="nav" id="nav">
+      <button class="arrow-btn" id="prevBtn" aria-label="Previous"><span class="material-icons">arrow_back_ios</span></button>
+      <button class="arrow-btn" id="nextBtn" aria-label="Next"><span class="material-icons">arrow_forward_ios</span></button>
+    </div>
+  </div>
+
+<script>
+/* -------------------------
+   Setup variables & state
+   ------------------------- */
+let currentStep = 0;
+let motorSteps = { 1: 0, 2: 0 }; // temporary motor step during calibration
+let sensor_steps = []; // [{step: ...}, ...]
+let schedules = [];    // [{time, motor, level}, ...]
+let threshold = 5;
+let light = 48;
+
+// Runtime config saved during setup
+const config = {
+  sensor_steps: [],
+  motors: [],
+  threshold: 5,
+  schedules: [],
+};
+
+// Main screen runtime mode state (internal only until saved)
+let runtimeMode = "automatic"; // default mode
+
+/* -------------------------
+   Helper: Download JSON
+   ------------------------- */
+function downloadJSON(obj, filename) {
+  const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+/* -------------------------
+   Save configuration (setup summary)
+   - After saving files, we instantly switch to main screen
+   ------------------------- */
+async function saveConfig() {
+  // Prepare main config
+  config.sensor_steps = sensor_steps.map(s => s.step);
+  config.threshold = threshold;
+  config.motors = [config.motors[0], config.motors[1]];
+  config.schedules = schedules.slice();
+
+  // Save settings file (prompt download)
+  const main = {
+    motors: config.motors,
+    sensor_steps: config.sensor_steps,
+    threshold: config.threshold
+  };
+  downloadJSON(main, "shade_settings.json");
+
+  // Convert schedules to readable format and download
+  const readableSchedules = schedules.map(s => ({
+    time: s.time,
+    motor: Number(s.motor) === 1 ? "sunshade" : "blackout",
+    level: s.level
+  }));
+  downloadJSON(readableSchedules, "shade_schedules.json");
+
+  // show confirmation and then instantly switch to main screen
+  const saveMsg = document.getElementById("saveNotice");
+  saveMsg.textContent = "✅ Configuration and schedules saved. Opening main screen...";
+  // immediate switch (no fade)
+  setTimeout(() => {
+    showMainScreen();
+    saveMsg.textContent = "";
+  }, 600); // small delay so user sees confirmation
+}
+
+/* -------------------------
+   Render Setup Steps (your original logic)
+   ------------------------- */
+const steps = [
+  {
+    title: "Smart Shade Setup",
+    subtitle: "Welcome",
+    body: `Begin setup for both blinds.<br><br>Kit includes:<br>• Two Blinds<br>• Light sensor<br>• Motor Housing Structure`,
+  },
+  {
+    title: "Smart Shade Setup",
+    subtitle: "Calibration (Sunshade)",
+    body: `
+      Set the sunshade <b>FULLY UP</b> by using the arrow keys below<br><br>
+      <div class="vertical-controls">
+        <button class="arrow-btn" onclick="changeStep(-10,1)"><span class="material-icons">arrow_upward</span></button>
+        <button class="arrow-btn" onclick="changeStep(10,1)"><span class="material-icons">arrow_downward</span></button>
+      </div>
+    `,
+    motor: 1
+  },
+  {
+    title: "Smart Shade Setup",
+    subtitle: "Calibration (Blackout)",
+    body: `
+      Set the blackout <b>FULLY UP</b> by using the arrow keys below<br><br>
+      <div class="vertical-controls">
+        <button class="arrow-btn" onclick="changeStep(-10,2)"><span class="material-icons">arrow_upward</span></button>
+        <button class="arrow-btn" onclick="changeStep(10,2)"><span class="material-icons">arrow_downward</span></button>
+      </div>
+    `,
+    motor: 2
+  },
+  {
+    title: "Smart Shade Setup",
+    subtitle: "Sensor Position",
+    body: `
+      Move the sunshade and tap “Add Sensor” to store the sensor position.<br><br>
+      <b>Normal Motor Step:</b> <span id="motorStep1">${motorSteps[1]}</span><br><br>
+      <div class="vertical-controls">
+        <button class="arrow-btn" onclick="changeStep(-10,1)"><span class="material-icons">arrow_upward</span></button>
+        <button class="arrow-btn" onclick="changeStep(10,1)"><span class="material-icons">arrow_downward</span></button>
+      </div>
+      <button id="addLevelBtn" class="action-btn"><span class="material-icons">add</span>Add Sensor</button>
+      <div id="levelList" class="level-list"></div>
+    `,
+    sensor_steps: true,
+  },
+  {
+    title: "Smart Shade Setup",
+    subtitle: "Light Sensor Threshold",
+    body: `
+      Adjust the light sensor threshold according to your needs<br><br>
+      Light Sensor currently reads: <b>${parseInt((light / 120) * 100)}%</b><br><br>
+      <div style="margin-top:1.5rem;">
+        <div id="thresholdValue" style="font-size:1.6rem;font-weight:bold;">${threshold}%</div>
+        <input type="range" id="thresholdSlider" min="0" max="100" value="${threshold}">
+      </div>
+    `,
+    threshold: true,
+  },
+  {
+    title: "Schedules",
+    subtitle: "Automation Setup",
+    body: `
+      Add an optional schedule for your Smart Shades<br><br>
+      <div style="display:flex; flex-direction:column;justify-content:center;align-items:center;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;">
+        <input type="time" id="scheduleTime" />
+        <select id="scheduleMotor">
+          <option value="1">Sunshade</option>
+          <option value="2">Blackout</option>
+        </select>
+        <select id="scheduleLevel"></select>
+        <button id="addScheduleBtn" class="action-btn" style="padding:0.5rem 1rem;"><span class="material-icons">add</span></button>
+      </div>
+      <div id="scheduleList" class="schedule-list"></div>
+    `,
+    schedules: true,
+  },
+  {
+    title: "Summary",
+    subtitle: "Review & Save",
+    body: `
+      Review setup, then press “Save Configuration.”<br>
+      <div id="summaryBox" class="summary-box"></div>
+      <button id="saveBtn" class="action-btn"><span class="material-icons">save</span>Save Configuration</button>
+    `,
+    summary: true,
+  },
+];
+
+function renderStep(){
+  const step = steps[currentStep];
+  const content = document.getElementById("content");
+  content.innerHTML = `<h1>${step.title}</h1><h2>${step.subtitle}</h2><p>${step.body}</p>`;
+
+  document.getElementById("prevBtn").style.visibility = currentStep === 0 ? "hidden" : "visible";
+  document.getElementById("nextBtn").style.visibility = currentStep === steps.length - 1 ? "hidden" : "visible";
+
+  // sensor_steps screen logic
+  if (step.sensor_steps) {
+    const addBtn = document.getElementById("addLevelBtn");
+    const list = document.getElementById("levelList");
+    function renderSensorSteps() {
+      list.innerHTML = sensor_steps.map((l,i)=>`
+        <div class="level-item">
+          <div><strong>Sensor ${i+1}</strong>: ${l.step} steps</div>
+          <button class="delete-btn" data-index="${i}"><span class="material-icons">delete</span></button>
+        </div>
+      `).join('');
+      document.querySelectorAll('.delete-btn').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const idx = Number(btn.getAttribute('data-index'));
+          sensor_steps.splice(idx,1);
+          renderSensorSteps();
+        });
+      });
+    }
+    addBtn.addEventListener('click', ()=>{
+      sensor_steps.push({ step: motorSteps[1] });
+      renderSensorSteps();
+    });
+    renderSensorSteps();
+  }
+
+  // threshold logic
+  if (step.threshold) {
+    const slider = document.getElementById('thresholdSlider');
+    const val = document.getElementById('thresholdValue');
+    slider.addEventListener('input', ()=>{
+      threshold = parseInt(slider.value,10);
+      val.textContent = `${threshold}%`;
+    });
+  }
+
+  // schedules
+  if (step.schedules) {
+    const timeInput = document.getElementById('scheduleTime');
+    const motorSelect = document.getElementById('scheduleMotor');
+    const sensor_stepselect = document.getElementById('scheduleLevel');
+    const addBtn = document.getElementById('addScheduleBtn');
+    const list = document.getElementById('scheduleList');
+
+    function refreshLevelSelect(){
+      sensor_stepselect.innerHTML = sensor_steps.length
+        ? sensor_steps.map((_,i)=>`<option value="${i+1}">Sensor ${i+1}</option>`).join('')
+        : `<option disabled>No Sensors added</option>`;
+    }
+
+    refreshLevelSelect();
+
+    function renderSchedules(){
+      list.innerHTML = schedules.map((s,i)=>`
+        <div class="schedule-item">
+          <div><strong>${s.time}</strong> — ${s.motor === "1" ? "Sunshade" : "Blackout"} → Sensor ${s.level}</div>
+          <button class="delete-btn" data-index="${i}"><span class="material-icons">delete</span></button>
+        </div>
+      `).join('');
+      document.querySelectorAll('.delete-btn').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const idx = Number(btn.getAttribute('data-index'));
+          schedules.splice(idx,1);
+          renderSchedules();
+        });
+      });
+    }
+
+    addBtn.addEventListener('click', ()=>{
+      if(!timeInput.value) return;
+      if(!sensor_stepselect.value) return;
+      if(!motorSelect.value) return;
+      schedules.push({ time: timeInput.value, motor: motorSelect.value, level: sensor_stepselect.value });
+      renderSchedules();
+      timeInput.value = "";
+    });
+
+    renderSchedules();
+  }
+
+  // summary
+  if (step.summary) {
+    const box = document.getElementById('summaryBox');
+    const motor1Steps = config.motors[0] ?? motorSteps[1];
+    const motor2Steps = config.motors[1] ?? motorSteps[2];
+    box.innerHTML = `
+      <div class="summary-section">
+        <strong>Calibration</strong>
+        Sunshade: ${motor1Steps} → 0 steps<br>
+        Blackout: ${motor2Steps} → 0 steps
+      </div>
+      <div class="summary-section">
+        <strong>Levels</strong>
+        ${sensor_steps.length ? sensor_steps.map((l,i)=>`Sensor ${i+1}: ${l.step} steps`).join("<br>") : "No Sensors added"}
+      </div>
+      <div class="summary-section">
+        <strong>Light Threshold</strong> ${threshold}%
+      </div>
+      <div class="summary-section">
+        <strong>Schedules</strong>
+        ${schedules.length ? schedules.map(s=>`${s.time} → ${s.motor === "1" ? "Sunshade" : "Blackout"}, Sensor ${s.level}`).join("<br>") : "No schedules added"}
+      </div>
+    `;
+    const saveBtn = document.getElementById('saveBtn');
+    saveBtn.addEventListener('click', saveConfig);
+  }
+}
+
+/* -------------------------
+   Motor control helper
+   ------------------------- */
+function changeStep(delta, motor){
+  motorSteps[motor] = (motorSteps[motor] || 0) + delta;
+  document.querySelectorAll(`#motorStep${motor}`).forEach(el=> el.textContent = motorSteps[motor]);
+}
+
+/* -------------------------
+   Nav buttons
+   ------------------------- */
+document.getElementById('prevBtn').addEventListener('click', ()=>{
+  if(currentStep>0) currentStep--;
+  renderStep();
+});
+document.getElementById('nextBtn').addEventListener('click', ()=>{
+  // If leaving calibration steps, store motor calibration
+  if (currentStep === 1) {
+    config.motors[0] = motorSteps[1];
+    motorSteps[1] = 0;
+  }
+  if (currentStep === 2) {
+    config.motors[1] = motorSteps[2];
+    motorSteps[2] = 0;
+  }
+  if (currentStep < steps.length - 1) currentStep++;
+  renderStep();
+});
+
+/* initial render */
+renderStep();
+
+/* -------------------------
+   MAIN SCREEN implementation
+   ------------------------- */
+function showMainScreen(){
+  // Hide nav and replace container content
+  document.getElementById('nav').style.display = 'none';
+  const container = document.getElementById('container');
+  container.innerHTML = `
+    <div class="main-screen" id="mainScreen">
+      <div>
+        <div class="main-title">Smart Shade Window</div>
+        <div class="sub-title muted-text">Configuration</div>
+      </div>
+
+      <div class="mode-row" role="tablist" aria-label="Modes">
+        <button class="mode-btn" id="manualModeBtn">Manual</button>
+        <button class="mode-btn active" id="autoModeBtn">Automatic</button>
+        <button class="mode-btn" id="scheduleModeBtn">Schedule</button>
+      </div>
+
+      <div class="mode-area" id="modeArea">
+        <!-- Mode-specific content injected here -->
+      </div>
+
+      <div class="mode-footer">
+        <div class="mode-indicator" id="modeIndicator"><span class="material-icons">play_arrow</span><span id="modeText">MODE: AUTOMATIC</span></div>
+
+        <div>
+          <button class="settings-btn" id="settingsBtn"><span class="material-icons">settings</span> Settings</button>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:6px;">
+          <button class="action-btn" id="saveModeBtn"><span class="material-icons">download</span>Save Mode</button>
+          <button class="action-btn" id="openSetupBtn"><span class="material-icons">restart_alt</span>Reset Setup</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Wire up mode buttons
+  const manualBtn = document.getElementById('manualModeBtn');
+  const autoBtn = document.getElementById('autoModeBtn');
+  const scheduleBtn = document.getElementById('scheduleModeBtn');
+
+  function setActiveMode(mode) {
+    runtimeMode = mode; // update internal state
+    // update button styles
+    [manualBtn, autoBtn, scheduleBtn].forEach(b => b.classList.remove('active'));
+    if (mode === 'manual') manualBtn.classList.add('active');
+    if (mode === 'automatic') autoBtn.classList.add('active');
+    if (mode === 'schedule') scheduleBtn.classList.add('active');
+
+    // update central area
+    renderModeArea(mode);
+
+    // update footer indicator text & icon
+    const modeText = document.getElementById('modeText');
+    const indicator = document.getElementById('modeIndicator');
+    if (mode === 'automatic') {
+      modeText.textContent = 'MODE: AUTOMATIC';
+      indicator.querySelector('.material-icons')?.remove?.();
+      indicator.innerHTML = '<span class="material-icons">play_arrow</span><span id="modeText">MODE: AUTOMATIC</span>';
+    } else if (mode === 'manual') {
+      indicator.innerHTML = '<span class="material-icons">person</span><span id="modeText">MODE: MANUAL</span>';
+    } else {
+      indicator.innerHTML = '<span class="material-icons">schedule</span><span id="modeText">MODE: SCHEDULE</span>';
+    }
+  }
+
+  manualBtn.addEventListener('click', ()=> setActiveMode('manual'));
+  autoBtn.addEventListener('click', ()=> setActiveMode('automatic'));
+  scheduleBtn.addEventListener('click', ()=> setActiveMode('schedule'));
+
+  // Save mode button (exports shade_mode.json)
+  document.getElementById('saveModeBtn').addEventListener('click', ()=>{
+    downloadJSON({ mode: runtimeMode }, 'shade_mode.json');
+    const saveNotice = document.getElementById('saveNotice');
+    if (saveNotice) {
+      saveNotice.textContent = `Mode saved: ${runtimeMode.toUpperCase()}`;
+      setTimeout(()=> saveNotice.textContent = '', 2400);
+    }
+  });
+
+  // Settings and reset
+  document.getElementById('settingsBtn').addEventListener('click', ()=>{
+    showSettingsScreen();
+  });
+
+  // Reset Setup quick button
+  document.getElementById('openSetupBtn').addEventListener('click', ()=> {
+    const confirmReset = confirm("Reset setup and return to configuration?");
+    if (confirmReset) resetSetup();
+  });
+
+  // default reflect existing runtimeMode
+  setActiveMode(runtimeMode);
+}
+
+/* -------------------------
+   Renders the center area depending on mode
+   ------------------------- */
+function renderModeArea(mode) {
+  const area = document.getElementById('modeArea');
+  if(!area) return;
+
+  if (mode === 'automatic') {
+    area.innerHTML = `
+      <div>
+        <div class="muted-text">Automatic control based on light sensor threshold and schedules</div>
+        <div style="margin-top:16px;">
+          <div class="controls-row">
+            <div class="muted-text">▶ Using threshold:</div>
+            <div style="margin-left:8px;font-weight:700;color:var(--accent)">${threshold}%</div>
+          </div>
+          <div style="margin-top:12px;">
+            <button class="action-btn" id="autoDetailsBtn"><span class="material-icons">info</span>Auto Details</button>
+          </div>
+        </div>
+      </div>
+    `;
+    // optional: auto details button could show schedule/threshold
+    const btn = document.getElementById('autoDetailsBtn');
+    if (btn) btn.addEventListener('click', ()=> {
+      alert(`Automatic Mode\n\nThreshold: ${threshold}%\nSensors: ${sensor_steps.length || 0}\nSchedules: ${schedules.length || 0}`);
+    });
+  }
+  else if (mode === 'manual') {
+    area.innerHTML = `
+      <div class="manual-controls">
+        <div class="big-arrows">
+          <button class="big-arrow-btn" id="arrowDown"><span class="material-icons">arrow_downward</span></button>
+          <button class="big-arrow-btn" id="arrowUp"><span class="material-icons">arrow_upward</span></button>
+        </div>
+        <div class="motor-buttons">
+          <button class="motor-btn" id="sunshadeBtn"><span class="material-icons">wb_sunny</span> Sunshade</button>
+          <button class="motor-btn" id="blackoutBtn"><span class="material-icons">nights_stay</span> Blackout</button>
+        </div>
+        <div class="muted-text">Use arrows to jog the selected motor. Select motor first then press arrows.</div>
+      </div>
+    `;
+
+    // Manual controls behavior (simulate motor commands)
+    let selectedMotor = 1; // 1 = sunshade, 2 = blackout
+    const sunshadeBtn = document.getElementById('sunshadeBtn');
+    const blackoutBtn = document.getElementById('blackoutBtn');
+    function selectMotor(m) {
+      selectedMotor = m;
+      sunshadeBtn.style.outline = m===1 ? "2px solid rgba(59,34,138,0.15)" : "none";
+      blackoutBtn.style.outline = m===2 ? "2px solid rgba(59,34,138,0.15)" : "none";
+    }
+    selectMotor(1);
+
+    sunshadeBtn.addEventListener('click', ()=> selectMotor(1));
+    blackoutBtn.addEventListener('click', ()=> selectMotor(2));
+
+    document.getElementById('arrowUp').addEventListener('click', ()=>{
+      // simulate step up
+      const step = 10;
+      // update motorSteps for the chosen motor and show a tiny confirmation
+      motorSteps[selectedMotor] = (motorSteps[selectedMotor] || 0) - step;
+      flashNotice(`Jogged motor ${selectedMotor} UP (${step} steps)`);
+    });
+    document.getElementById('arrowDown').addEventListener('click', ()=>{
+      const step = 10;
+      motorSteps[selectedMotor] = (motorSteps[selectedMotor] || 0) + step;
+      flashNotice(`Jogged motor ${selectedMotor} DOWN (${step} steps)`);
+    });
+  }
+  else if (mode === 'schedule') {
+    // Determine next scheduled action (based on current time & schedules)
+    const next = computeNextAction();
+    area.innerHTML = `
+      <div>
+        <div class="muted-text">Next Action:</div>
+        <div class="next-action" id="nextActionText">${next ? formatNextText(next) : 'No scheduled actions'}</div>
+        <div style="margin-top:14px;">
+          <button class="action-btn" id="viewSchedulesBtn"><span class="material-icons">list</span>View Schedules</button>
+        </div>
+      </div>
+    `;
+    const vsBtn = document.getElementById('viewSchedulesBtn');
+    vsBtn.addEventListener('click', ()=>{
+      if(!schedules.length) {
+        alert("No schedules configured.");
+        return;
+      }
+      // show a simple list view
+      const list = schedules.map(s => `${s.time} → ${s.motor === "1" ? "Sunshade" : "Blackout"} → Sensor ${s.level}`).join("\n");
+      alert("Schedules:\n\n" + list);
+    });
+  }
+}
+
+/* -------------------------
+   Compute next scheduled action (simple local-time based)
+   Uses schedules[] array of {time:"HH:MM", motor:"1"|"2", level:"N"}
+   Returns the next schedule object or null.
+   ------------------------- */
+function computeNextAction(){
+  if(!schedules.length) return null;
+  // get now in HH:MM (24h)
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  const nowStr = pad(now.getHours()) + ':' + pad(now.getMinutes());
+
+  // sort schedules by time ascending
+  const sorted = schedules.slice().sort((a,b)=> a.time.localeCompare(b.time));
+  // find first schedule >= now
+  for (let s of sorted) {
+    if (s.time >= nowStr) return s;
+  }
+  // otherwise return the first one for tomorrow
+  return sorted[0];
+}
+function formatNextText(s){
+  if(!s) return "No scheduled actions";
+  const motorName = s.motor === "1" ? "Sunshade" : "Blackout";
+  return `${s.time} → ${motorName} → S${s.level}`;
+}
+
+/* -------------------------
+   Small UI helper: show brief notice in saveNotice area
+   ------------------------- */
+function flashNotice(msg) {
+  const el = document.getElementById('saveNotice');
+  if (!el) return;
+  el.textContent = msg;
+  setTimeout(()=> el.textContent = '', 1600);
+}
+
+/* -------------------------
+   SETTINGS SCREEN
+   ------------------------- */
+function showSettingsScreen() {
+  const container = document.getElementById('container');
+  document.getElementById('nav').style.display = 'none';
+  container.innerHTML = `
+    <div class="main-screen" id="settingsScreen">
+      <div>
+        <div class="main-title">Settings</div>
+        <div class="sub-title muted-text">Configuration & Maintenance</div>
+      </div>
+
+      <div style="text-align:left;width:90%;max-width:340px;">
+        <button class="action-btn" id="recalibrateBtn" style="width:100%;justify-content:flex-start;">
+          <span class="material-icons">build</span> Recalibrate Shades
+        </button>
+      </div>
+
+      <div style="margin-top:16px;width:90%;max-width:340px;text-align:left;">
+        <h2 style="font-size:16px;color:var(--accent);margin-bottom:6px;">Sensor Steps</h2>
+        <div id="settingsSensorList" class="schedule-list"></div>
+        <button class="action-btn" id="addSensorBtn"><span class="material-icons">add</span>Add Sensor</button>
+      </div>
+
+      <div style="margin-top:16px;width:90%;max-width:340px;text-align:left;">
+        <h2 style="font-size:16px;color:var(--accent);margin-bottom:6px;">Schedules</h2>
+        <div id="settingsScheduleList" class="schedule-list"></div>
+        <button class="action-btn" id="addScheduleBtn2"><span class="material-icons">add</span>Add Schedule</button>
+      </div>
+
+      <div class="mode-footer">
+        <button class="action-btn" id="backToMainBtn"><span class="material-icons">arrow_back</span>Back to Main</button>
+      </div>
+    </div>
+  `;
+
+  // --- Back button ---
+  document.getElementById('backToMainBtn').addEventListener('click', ()=>{
+    showMainScreen();
+  });
+
+  // --- Recalibration ---
+  document.getElementById('recalibrateBtn').addEventListener('click', ()=>{
+    const confirmReset = confirm("Recalibrate the shades?\nThis restarts the setup wizard.");
+    if (confirmReset) {
+      setTimeout(() => resetSetup(), 50);
+    }
+  });
+
+  // --- Sensor List Render & Edit ---
+  const sensorList = document.getElementById('settingsSensorList');
+  function renderSensorList() {
+    if (!sensor_steps.length) {
+      sensorList.innerHTML = `<div class="muted-text">No sensors configured.</div>`;
+      return;
+    }
+    sensorList.innerHTML = sensor_steps.map((s,i)=>`
+      <div class="schedule-item">
+        <div><strong>Sensor ${i+1}</strong></div>
+        <input type="number" id="sensorInput${i}" value="${s.step}" style="width:80px;padding:4px;border-radius:6px;border:1px solid #ccc;" />
+        <button class="delete-btn" data-index="${i}"><span class="material-icons">delete</span></button>
+      </div>
+    `).join('');
+    sensorList.querySelectorAll('input').forEach((inp,i)=>{
+      inp.addEventListener('change',()=>{ sensor_steps[i].step = Number(inp.value)||0; });
+    });
+    sensorList.querySelectorAll('.delete-btn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const idx = Number(btn.getAttribute('data-index'));
+        sensor_steps.splice(idx,1);
+        renderSensorList();
+      });
+    });
+  }
+  renderSensorList();
+
+  document.getElementById('addSensorBtn').addEventListener('click', ()=>{
+    sensor_steps.push({ step: 0 });
+    renderSensorList();
+  });
+
+  // --- Schedule List Render & Edit ---
+  const schedList = document.getElementById('settingsScheduleList');
+  function renderScheduleList() {
+    if (!schedules.length) {
+      schedList.innerHTML = `<div class="muted-text">No schedules configured.</div>`;
+      return;
+    }
+    schedList.innerHTML = schedules.map((s,i)=>`
+      <div class="schedule-item" style="flex-wrap:wrap;gap:6px;">
+        <input type="time" id="schedTime${i}" value="${s.time}" />
+        <select id="schedMotor${i}">
+          <option value="1" ${s.motor==="1"?"selected":""}>Sunshade</option>
+          <option value="2" ${s.motor==="2"?"selected":""}>Blackout</option>
+        </select>
+        <select id="schedLevel${i}">
+          ${sensor_steps.map((_,j)=>`<option value="${j+1}" ${Number(s.level)===j+1?"selected":""}>S${j+1}</option>`).join('')}
+        </select>
+        <button class="delete-btn" data-index="${i}"><span class="material-icons">delete</span></button>
+      </div>
+    `).join('');
+
+    schedules.forEach((_,i)=>{
+      const t=document.getElementById(`schedTime${i}`);
+      const m=document.getElementById(`schedMotor${i}`);
+      const l=document.getElementById(`schedLevel${i}`);
+      t.addEventListener('change',()=>{ schedules[i].time=t.value; });
+      m.addEventListener('change',()=>{ schedules[i].motor=m.value; });
+      l.addEventListener('change',()=>{ schedules[i].level=l.value; });
+    });
+    schedList.querySelectorAll('.delete-btn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const idx = Number(btn.getAttribute('data-index'));
+        schedules.splice(idx,1);
+        renderScheduleList();
+      });
+    });
+  }
+  renderScheduleList();
+
+  document.getElementById('addScheduleBtn2').addEventListener('click', ()=>{
+    schedules.push({ time:"08:00", motor:"1", level:"1" });
+    renderScheduleList();
+  });
+}
+
+/* -------------------------
+   Reset setup (clear runtime and re-render setup wizard)
+   ------------------------- */
+function resetSetup(){
+  // Clear runtime state but preserve nothing
+  currentStep = 0;
+  motorSteps = {1:0,2:0};
+  sensor_steps = [];
+  schedules = [];
+  threshold = 5;
+  light = 48;
+  runtimeMode = "automatic";
+  config.motors = [];
+  config.sensor_steps = [];
+  config.threshold = 5;
+  config.schedules = [];
+
+  // Restore container layout so renderStep() has somewhere to draw
+  const container = document.getElementById('container');
+  container.innerHTML = `
+    <div id="content"></div>
+    <div id="saveNotice"></div>
+  `;
+
+  // show nav again
+  document.getElementById('nav').style.display = 'flex';
+
+  // re-render setup content
+  renderStep();
+}
+
+/* Expose changeStep to global so inline onclicks work */
+window.changeStep = changeStep;
+</script>
+</body>
+</html>
