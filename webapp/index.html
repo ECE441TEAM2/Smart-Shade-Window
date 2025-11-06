@@ -564,6 +564,10 @@
         ensureCorrectBlind(s.motor);
       }
 
+      if (s.id === 'sensor-position') {
+        ensureSunshadeActive();
+      }
+
       // Sensor steps
       if (s.sensor_steps) {
         const addBtn = qs('addSensorBtn'); const list = qs('sensorList');
@@ -641,6 +645,19 @@
         }
       } catch (e) {
         console.error('Failed to ensure correct blind', e);
+      }
+    }
+
+    async function ensureSunshadeActive() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        if (data.active_shade !== 'sunshade') {
+          await fetch('/api/swap_dumb', { method: 'POST' });
+          await new Promise(r => setTimeout(r, 500));
+        }
+      } catch (e) {
+        console.error('Failed to set sunshade active', e);
       }
     }
 
