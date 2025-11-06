@@ -305,7 +305,7 @@ def api_swap():
     return jsonify({"status": "ok", "active_shade": active_shade})
 
 @app.route("/api/swap_dumb", methods=["POST"])
-def api_swap():
+def api_swap_dumb():
     """Service webapp request to swap between blackout and sunshade blinds without moving the motors."""
     swap_blind_dumb()
     return jsonify({"status": "ok", "active_shade": active_shade})
