@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Shade • Mobile</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #eae7f5;
+      --card: #fefcff;
+      --accent: #3b228a;
+      --accent-soft: #e6dbff;
+      --muted: #f7f4ff;
+      --text: #222;
+      --danger: #a00;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background-color: var(--bg);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+      color: var(--text);
+    }
+
+    /* Phone frame container */
+    .phone-frame {
+      width: 390px; /* iPhone 12/13 mini width */
+      height: 760px;
+      background: var(--card);
+      border-radius: 32px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.9rem 1rem;
+      border-bottom: 1px solid #eee;
+    }
+    .header h1 { font-size: 1.25rem; margin: 0; color: var(--accent); }
+
+    .container {
+      padding: 1rem 1.25rem 0.5rem 1.25rem;
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Shared UI pieces */
+    h2 { font-size: 1.1rem; margin: 0 0 0.5rem; color: var(--accent); }
+    p { font-size: 0.98rem; line-height: 1.45; }
+
+    .card {
+      background: var(--muted);
+      border-radius: 12px;
+      padding: 0.9rem;
+      margin: 0.6rem 0;
+    }
+
+    .row { display: flex; align-items: center; gap: 0.5rem; }
+    .row.space { justify-content: space-between; }
+    .col { display: flex; flex-direction: column; gap: 0.5rem; }
+
+    .btn {
+      background-color: var(--accent-soft);
+      color: var(--accent);
+      border: none;
+      border-radius: 12px;
+      padding: 0.6rem 0.95rem;
+      font-size: 1rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      cursor: pointer;
+      transition: transform 0.05s ease, background-color 0.2s ease;
+      user-select: none;
+    }
+    .btn:hover { background-color: #d8caff; }
+    .btn:active { transform: translateY(1px); }
+    .btn.primary { background: var(--accent); color: #fff; }
+    .btn.danger { color: #fff; background: #c43a3a; }
+
+    .icon { font-family: 'Material Icons'; font-size: 22px; }
+
+    input[type="range"] { width: 100%; accent-color: #7b4cff; }
+    input[type="time"], select, input[type="number"], input[type="text"] {
+      width: 100%;
+      padding: 0.55rem 0.7rem;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      font-size: 0.95rem;
+      background: #fff;
+    }
+
+    .list { max-height: 180px; overflow-y: auto; }
+    .list-item {
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 10px;
+      padding: 0.55rem 0.7rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 0.4rem 0;
+    }
+    .delete {
+      background: transparent; border: none; color: var(--danger); cursor: pointer;
+    }
+
+    .summary-box { background: var(--muted); border-radius: 12px; padding: 0.8rem; font-size: 0.95rem; }
+
+    .statusline { font-size: 0.9rem; color: #555; margin: 0.25rem 0; }
+
+    /* Wizard nav */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0.8rem 0.8rem 0.8rem;
+      border-top: 1px solid #eee;
+    }
+    .arrow-btn { background: none; border: none; cursor: pointer; }
+    .arrow-btn .material-icons { font-size: 36px; color: var(--accent); }
+
+    /* Bottom control panel bar */
+    .tabbar {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.6rem;
+      border-top: 1px solid #eee;
+      background: #fff;
+    }
+    .tabbar .btn { flex: 1; justify-content: center; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="phone-frame">
+    <div class="header">
+      <h1 id="title">Smart Shade</h1>
+    </div>
+
+    <div class="container">
+      <!-- Wizard Root -->
+      <div id="wizardRoot" class="hidden"></div>
+
+      <!-- Control Panel Root -->
+      <div id="panelRoot" class="hidden">
+        <!-- Status card -->
+        <div class="card">
+          <h2>Status</h2>
+          <div class="statusline">Mode: <strong id="modeDisplay">—</strong></div>
+          <div class="statusline">Active Shade: <strong id="shadeDisplay">—</strong></div>
+          <div class="statusline">Current Step: <strong id="stepDisplay">0</strong></div>
+        </div>
+
+        <!-- Mode Controls -->
+        <div class="card">
+          <h2>Mode</h2>
+          <div class="row">
+            <button class="btn" onclick="setMode('auto')"><span class="icon">autorenew</span>Auto</button>
+            <button class="btn" onclick="setMode('manual')"><span class="icon">touch_app</span>Manual</button>
+            <button class="btn" onclick="setMode('schedule')"><span class="icon">schedule</span>Schedule</button>
+            <button class="btn" onclick="setMode('setup')"><span class="icon">build</span>Setup</button>
+          </div>
+        </div>
+
+        <!-- Blind Controls -->
+        <div class="card">
+          <h2>Blinds</h2>
+          <div class="row">
+            <button class="btn" onclick="move('up')"><span class="icon">north</span>Up</button>
+            <button class="btn" onclick="move('down')"><span class="icon">south</span>Down</button>
+            <button class="btn" onclick="swapBlind()"><span class="icon">swap_horiz</span>Swap</button>
+          </div>
+        </div>
+
+        <!-- Sensors -->
+        <div class="card">
+          <h2>Sensors</h2>
+          <div class="row space">
+            <div class="statusline">Light readings</div>
+            <button class="btn" onclick="refreshSensors()"><span class="icon">refresh</span>Refresh</button>
+          </div>
+          <div id="sensorContainer" class="list">Loading…</div>
+        </div>
+
+        <!-- Save -->
+        <div class="card">
+          <h2>Configuration</h2>
+          <button class="btn primary" onclick="savePanelConfig()"><span class="icon">save</span>Save to Pi</button>
+          <div id="panelSaveMsg" class="statusline"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wizard nav and Panel tabbar (shown/hidden dynamically) -->
+    <div id="wizardNav" class="nav hidden">
+      <button class="arrow-btn" id="prevBtn"><span class="material-icons">arrow_back_ios</span></button>
+      <button class="arrow-btn" id="nextBtn"><span class="material-icons">arrow_forward_ios</span></button>
+    </div>
+
+    <div id="panelTabbar" class="tabbar hidden">
+      <button class="btn" onclick="updateStatus()"><span class="icon">refresh</span>Status</button>
+      <button class="btn" onclick="refreshSensors()"><span class="icon">sensors</span>Sensors</button>
+      <button class="btn" onclick="savePanelConfig()"><span class="icon">save</span>Save</button>
+    </div>
+  </div>
+
+  <script>
+    /* ------------------------------------------------------------------
+     * Global state
+     * ------------------------------------------------------------------ */
+    const POLL_MS = 3000;
+    let pollTimer = null;
+
+    // Shared status (from /api/status)
+    const statusState = {
+      mode: 'setup',
+      active_shade: 'sunshade',
+      step: 0,
+    };
+
+    // Wizard state (ported from the elegant index-full flow, adapted for API save)
+    let currentStep = 0;
+    let motorSteps = { 1: 0, 2: 0 }; // temp positions while calibrating
+    let sensorSteps = [];            // [{step: number}]
+    let schedules = [];              // [{time, motor: '1'|'2', level: '1'..}]
+    let threshold = 5;               // 0..100 UI percent (maps to your internal units if needed)
+    let light = 48;                  // demo number for UI only
+
+    // Persisted motors after calibration (index 0: sunshade, index 1: blackout)
+    const config = {
+      motors: [null, null],
+      sensor_steps: [],
+      threshold: 5,
+    };
+
+    /* ------------------------------------------------------------------
+     * View switching (Wizard vs Panel)
+     * ------------------------------------------------------------------ */
+    function showWizard() {
+      document.getElementById('wizardRoot').classList.remove('hidden');
+      document.getElementById('wizardNav').classList.remove('hidden');
+      document.getElementById('panelRoot').classList.add('hidden');
+      document.getElementById('panelTabbar').classList.add('hidden');
+      document.getElementById('title').textContent = 'Smart Shade • Setup';
+      renderStep();
+    }
+
+    function showPanel() {
+      document.getElementById('wizardRoot').classList.add('hidden');
+      document.getElementById('wizardNav').classList.add('hidden');
+      document.getElementById('panelRoot').classList.remove('hidden');
+      document.getElementById('panelTabbar').classList.remove('hidden');
+      document.getElementById('title').textContent = 'Smart Shade • Control';
+      updateStatus();
+      refreshSensors();
+    }
+
+    async function decideView() {
+      try {
+        await updateStatus();
+        if (statusState.mode === 'setup') {
+          showWizard();
+        } else {
+          showPanel();
+        }
+      } catch (e) {
+        console.error('Failed to decide view:', e);
+        // Default to panel if status fails
+        showPanel();
+      }
+    }
+
+    /* ------------------------------------------------------------------
+     * Control Panel logic (API-backed)
+     * ------------------------------------------------------------------ */
+    async function updateStatus() {
+      const res = await fetch('/api/status');
+      const data = await res.json();
+      statusState.mode = data.mode;
+      statusState.active_shade = data.active_shade;
+      statusState.step = data.step;
+      // Paint UI if panel is visible
+      const modeEl = document.getElementById('modeDisplay');
+      if (modeEl) {
+        modeEl.textContent = statusState.mode;
+        document.getElementById('shadeDisplay').textContent = statusState.active_shade;
+        document.getElementById('stepDisplay').textContent = statusState.step;
+      }
+      return data;
+    }
+
+    async function setMode(mode) {
+      await fetch('/api/mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode }),
+      });
+      await updateStatus();
+      // If we just switched to setup, flip views
+      if (statusState.mode === 'setup') {
+        showWizard();
+      }
+    }
+
+    async function move(direction) {
+      await fetch('/api/move', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ direction, steps: 10 }),
+      });
+      updateStatus();
+    }
+
+    async function swapBlind() {
+      await fetch('/api/swap', { method: 'POST' });
+      updateStatus();
+    }
+
+    async function refreshSensors() {
+      const res = await fetch('/api/sensors');
+      const data = await res.json();
+      const container = document.getElementById('sensorContainer');
+      if (!container) return;
+      container.innerHTML = '';
+      data.readings.forEach((r, i) => {
+        const div = document.createElement('div');
+        div.className = 'list-item';
+        div.textContent = `Sensor ${i + 1}: ${r === null ? 'N/A' : r.toFixed(2) + ' lux'}`;
+        container.appendChild(div);
+      });
+    }
+
+    async function saveToPi(settings, schedules) {
+      const res = await fetch('/api/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings, schedules }),
+      });
+      return res.ok;
+    }
+
+    async function savePanelConfig() {
+      // Example: collect a minimal snapshot from panel (you can wire real inputs later)
+      const settings = {
+        motors: config.motors.map(v => (v ?? 0)),
+        sensor_steps: sensorSteps.map(s => s.step),
+        threshold: threshold,
+      };
+      const ok = await saveToPi(settings, schedules);
+      const msg = document.getElementById('panelSaveMsg');
+      msg.textContent = ok ? '✅ Configuration saved to Raspberry Pi.' : '❌ Failed to save configuration.';
+      setTimeout(() => (msg.textContent = ''), 3500);
+    }
+
+    /* ------------------------------------------------------------------
+     * Setup Wizard (ported + adapted)
+     * ------------------------------------------------------------------ */
+    const steps = [
+      {
+        title: 'Smart Shade Setup',
+        subtitle: 'Welcome',
+        body: `Begin setup for both blinds.<br><br>Kit includes:<br>• Two Blinds<br>• Light sensor<br>• Motor Housing Structure`,
+        renderExtras: () => '',
+      },
+      {
+        title: 'Smart Shade Setup',
+        subtitle: 'Calibration (Sunshade)',
+        body: `Set the sunshade <b>FULLY UP</b> by using the arrow keys below`,
+        renderExtras: () => `
+          <div class="row" style="justify-content:center; gap:1rem; margin-top:0.6rem;">
+            <button class="btn" onclick="changeStep(-10,1)"><span class="icon">north</span>Up</button>
+            <button class="btn" onclick="changeStep(10,1)"><span class="icon">south</span>Down</button>
+          </div>
+          <div class="statusline" style="text-align:center; margin-top:0.3rem;">Current: <strong id="motorStep1">${motorSteps[1]}</strong> steps</div>
+        `,
+        motor: 1,
+      },
+      {
+        title: 'Smart Shade Setup',
+        subtitle: 'Calibration (Blackout)',
+        body: `Set the blackout <b>FULLY UP</b> by using the arrow keys below`,
+        renderExtras: () => `
+          <div class="row" style="justify-content:center; gap:1rem; margin-top:0.6rem;">
+            <button class="btn" onclick="changeStep(-10,2)"><span class="icon">north</span>Up</button>
+            <button class="btn" onclick="changeStep(10,2)"><span class="icon">south</span>Down</button>
+          </div>
+          <div class="statusline" style="text-align:center; margin-top:0.3rem;">Current: <strong id="motorStep2">${motorSteps[2]}</strong> steps</div>
+        `,
+        motor: 2,
+      },
+      {
+        title: 'Smart Shade Setup',
+        subtitle: 'Sensor Positions',
+        body: `Move the sunshade and tap “Add Sensor” to store a sensor position.`,
+        renderExtras: () => `
+          <div class="card" style="margin-top:0.4rem;">
+            <div class="row space">
+              <div><b>Sunshade step</b>: <span id="motorStep1b">${motorSteps[1]}</span></div>
+              <div class="row">
+                <button class="btn" onclick="changeStep(-10,1)"><span class="icon">north</span></button>
+                <button class="btn" onclick="changeStep(10,1)"><span class="icon">south</span></button>
+              </div>
+            </div>
+            <div class="row" style="justify-content:center; margin-top:0.5rem;">
+              <button id="addSensorBtn" class="btn"><span class="icon">add</span>Add Sensor</button>
+            </div>
+            <div id="sensorList" class="list" style="margin-top:0.5rem;"></div>
+          </div>
+        `,
+        sensor_steps: true,
+      },
+      {
+        title: 'Smart Shade Setup',
+        subtitle: 'Light Sensor Threshold',
+        body: `Adjust the light sensor threshold according to your needs.<br><br>Light Sensor currently reads: <b>${parseInt((light / 120) * 100)}%</b>`,
+        renderExtras: () => `
+          <div class="card">
+            <div style="font-size:1.4rem; font-weight:700; text-align:center;" id="thresholdValue">${threshold}%</div>
+            <input type="range" id="thresholdSlider" min="0" max="100" value="${threshold}">
+          </div>
+        `,
+        threshold: true,
+      },
+      {
+        title: 'Schedules',
+        subtitle: 'Automation Setup',
+        body: 'Add an optional schedule for your Smart Shades',
+        renderExtras: () => `
+          <div class="card">
+            <div class="row" style="gap:0.5rem; flex-wrap:wrap;">
+              <input type="time" id="scheduleTime" />
+              <select id="scheduleMotor">
+                <option value="1">Sunshade</option>
+                <option value="2">Blackout</option>
+              </select>
+              <select id="scheduleLevel"></select>
+              <button id="addScheduleBtn" class="btn"><span class="icon">add</span></button>
+            </div>
+            <div id="scheduleList" class="list" style="margin-top:0.5rem;"></div>
+          </div>
+        `,
+        schedules: true,
+      },
+      {
+        title: 'Summary',
+        subtitle: 'Review & Save',
+        body: 'Review setup, then press “Save Configuration.”',
+        renderExtras: () => `
+          <div id="summaryBox" class="summary-box" style="margin-top:0.5rem;"></div>
+          <div class="row" style="justify-content:center; margin-top:0.6rem;">
+            <button id="saveBtn" class="btn primary"><span class="icon">save</span>Save Configuration</button>
+          </div>
+          <div id="saveNotice" class="statusline" style="text-align:center; margin-top:0.4rem;"></div>
+        `,
+        summary: true,
+      },
+    ];
+
+    function renderStep() {
+      const root = document.getElementById('wizardRoot');
+      const s = steps[currentStep];
+      root.innerHTML = `
+        <div class="card">
+          <h2>${s.title}</h2>
+          <div class="statusline"><strong>${s.subtitle}</strong></div>
+          <p style="margin-top:0.3rem;">${s.body}</p>
+          ${s.renderExtras ? s.renderExtras() : ''}
+        </div>`;
+
+      // prev/next visibility
+      document.getElementById('prevBtn').style.visibility = currentStep === 0 ? 'hidden' : 'visible';
+      document.getElementById('nextBtn').style.visibility = currentStep === steps.length - 1 ? 'hidden' : 'visible';
+
+      // Sensor steps
+      if (s.sensor_steps) {
+        const addBtn = document.getElementById('addSensorBtn');
+        const list = document.getElementById('sensorList');
+        function paint() {
+          list.innerHTML = sensorSteps.map((l, i) => `
+            <div class='list-item'>
+              <div><strong>Sensor ${i + 1}</strong>: ${l.step} steps</div>
+              <button class='delete' data-index='${i}'><span class='icon'>delete</span></button>
+            </div>`).join('');
+          list.querySelectorAll('.delete').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const idx = Number(btn.getAttribute('data-index'));
+              sensorSteps.splice(idx, 1);
+              paint();
+            });
+          });
+        }
+        addBtn.addEventListener('click', () => {
+          sensorSteps.push({ step: motorSteps[1] });
+          paint();
+        });
+        paint();
+      }
+
+      // Threshold slider
+      if (s.threshold) {
+        const slider = document.getElementById('thresholdSlider');
+        const val = document.getElementById('thresholdValue');
+        slider.addEventListener('input', () => {
+          threshold = parseInt(slider.value, 10);
+          val.textContent = `${threshold}%`;
+        });
+      }
+
+      // Schedules builder
+      if (s.schedules) {
+        const timeInput = document.getElementById('scheduleTime');
+        const motorSelect = document.getElementById('scheduleMotor');
+        const levelSelect = document.getElementById('scheduleLevel');
+        const addBtn = document.getElementById('addScheduleBtn');
+        const list = document.getElementById('scheduleList');
+
+        function fillLevelOptions() {
+          levelSelect.innerHTML = sensorSteps.length
+            ? sensorSteps.map((_, i) => `<option value='${i + 1}'>Sensor ${i + 1}</option>`).join('')
+            : `<option disabled>No Sensors added</option>`;
+        }
+        function paintSchedules() {
+          list.innerHTML = schedules.map((s, i) => `
+            <div class='list-item'>
+              <div><strong>${s.time}</strong> — ${s.motor === '1' ? 'Sunshade' : 'Blackout'} → Sensor Level ${s.level}</div>
+              <button class='delete' data-index='${i}'><span class='icon'>delete</span></button>
+            </div>`).join('');
+          list.querySelectorAll('.delete').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const idx = Number(btn.getAttribute('data-index'));
+              schedules.splice(idx, 1);
+              paintSchedules();
+            });
+          });
+        }
+        addBtn.addEventListener('click', () => {
+          if (!timeInput.value || !motorSelect.value || !levelSelect.value) return;
+          schedules.push({ time: timeInput.value, motor: motorSelect.value, level: levelSelect.value });
+          paintSchedules();
+          timeInput.value = '';
+        });
+
+        fillLevelOptions();
+        paintSchedules();
+      }
+
+      // Summary + save
+      if (s.summary) {
+        const box = document.getElementById('summaryBox');
+        const saveBtn = document.getElementById('saveBtn');
+        const saveMsg = document.getElementById('saveNotice');
+
+        const motor1Steps = config.motors[0] ?? motorSteps[1];
+        const motor2Steps = config.motors[1] ?? motorSteps[2];
+
+        box.innerHTML = `
+          <div class='card'>
+            <div><strong>Calibration</strong></div>
+            <div>Sunshade: ${motor1Steps} → 0 steps</div>
+            <div>Blackout: ${motor2Steps} → 0 steps</div>
+          </div>
+          <div class='card'>
+            <div><strong>Levels</strong></div>
+            ${sensorSteps.length ? sensorSteps.map((l, i) => `Sensor ${i + 1}: ${l.step} steps`).join('<br>') : 'No Sensors added'}
+          </div>
+          <div class='card'>
+            <div><strong>Light Threshold</strong> ${threshold}%</div>
+          </div>
+          <div class='card'>
+            <div><strong>Schedules</strong></div>
+            ${schedules.length ? schedules.map(s => `${s.time} → ${s.motor === '1' ? 'Sunshade' : 'Blackout'}, Sensor ${s.level}`).join('<br>') : 'No schedules added'}
+          </div>
+        `;
+
+        saveBtn.addEventListener('click', async () => {
+          // Build payload for /api/save
+          const settings = {
+            motors: [motor1Steps, motor2Steps],
+            sensor_steps: sensorSteps.map(s => s.step),
+            threshold: threshold,
+          };
+          const readableSchedules = schedules.map(s => ({
+            time: s.time,
+            motor: s.motor === '1' ? 'sunshade' : 'blackout',
+            level: s.level,
+          }));
+
+          const ok = await saveToPi(settings, readableSchedules);
+          saveMsg.textContent = ok ? '✅ Configuration saved to Raspberry Pi.' : '❌ Failed to save configuration.';
+          setTimeout(() => (saveMsg.textContent = ''), 4000);
+        });
+      }
+    }
+
+    function changeStep(delta, motor) {
+      motorSteps[motor] = motorSteps[motor] + delta;
+      const els = document.querySelectorAll(`#motorStep${motor}, #motorStep${motor}b`);
+      els.forEach(el => (el.textContent = motorSteps[motor]));
+    }
+
+    // Wizard nav handlers
+    document.getElementById('prevBtn').addEventListener('click', () => {
+      if (currentStep > 0) currentStep--;
+      renderStep();
+    });
+    document.getElementById('nextBtn').addEventListener('click', () => {
+      if (currentStep === 1) { // leaving sunshade calibration
+        config.motors[0] = motorSteps[1];
+        motorSteps[1] = 0; // reset after recording "fully up" position
+      }
+      if (currentStep === 2) { // leaving blackout calibration
+        config.motors[1] = motorSteps[2];
+        motorSteps[2] = 0;
+      }
+      if (currentStep < steps.length - 1) currentStep++;
+      renderStep();
+    });
+
+    /* ------------------------------------------------------------------
+     * App bootstrap & polling
+     * ------------------------------------------------------------------ */
+    async function bootstrap() {
+      await decideView();
+      // start polling mode/status, switch view if it changes remotely
+      if (pollTimer) clearInterval(pollTimer);
+      pollTimer = setInterval(async () => {
+        const oldMode = statusState.mode;
+        try {
+          await updateStatus();
+          if (oldMode !== statusState.mode) {
+            // swap view
+            if (statusState.mode === 'setup') showWizard(); else showPanel();
+          }
+        } catch (e) {
+          console.warn('Polling failed:', e);
+        }
+      }, POLL_MS);
+    }
+
+    bootstrap();
+  </script>
+</body>
+</html>
