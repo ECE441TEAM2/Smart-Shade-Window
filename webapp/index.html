@@ -619,15 +619,29 @@
     }
 	
 	function moveDuringSetup(direction, motor) {
-      // The backend expects a direction and probably active shade; we can emulate that
-      // by temporarily swapping motor index before calling move.
-      fetch('/api/move', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ direction, steps: 10, motor }),
-      }).catch(err => console.error('Setup move failed', err));
+      ensureCorrectBlind(motor).then(() => {
+        fetch('/api/move', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ direction, steps: 10, motor }),
+        }).catch(err => console.error('Setup move failed', err));
+      });
     }
 
+    async function ensureCorrectBlind(motor) {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        const active = data.active_shade;
+        const desired = motor === 1 ? 'sunshade' : 'blackout';
+        if (active !== desired) {
+          await fetch('/api/swap', { method: 'POST' });
+          await new Promise(r => setTimeout(r, 500));
+        }
+      } catch (e) {
+        console.error('Failed to ensure correct blind', e);
+      }
+    }
 
     // Wizard nav
     qs('prevBtn').addEventListener('click', () => { if (currentStep > 0) currentStep--; renderStep(); });
