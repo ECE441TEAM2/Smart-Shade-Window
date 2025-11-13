@@ -196,9 +196,9 @@ def swap_blind_dumb():
     return
 
 def setup_mode():
-    """Uses the web app to set up variables used by the other modes."""
-    # NOT YET IMPLEMENTED
-    pass
+    """Uses the web app to set up variables used by the other modes.
+    NOTE: This is a dummy mode. The setup process is entirely handled by the web app."""
+    return
 
 def automatic_mode():
     """Iterates through each sensor's readings from top to bottom.
