@@ -165,7 +165,6 @@
     .statusline { font-size: 0.9rem; color: #555; margin: 0.25rem 0; }
 
     /* Wizard nav */
-         * 
     .nav { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.8rem 0.8rem; border-top: 1px solid #eee; }
     .arrow-btn { background: none; border: none; cursor: pointer; }
     .arrow-btn .material-icons { font-size: 36px; color: var(--accent); }
@@ -236,7 +235,7 @@
                     <div class="row space">
                         <div class="statusline">Light readings</div>
                         <button class="btn" onclick="refreshSensors()"><span class="icon">refresh</span>Refresh</button>
-                    </div>        * 
+                    </div>
                     <div id="sensorContainer" class="list">Shown in Auto mode</div>
                 </div>
 
@@ -442,11 +441,11 @@
         */
         function capitalize(sentence)
         {
-            return word.charAt(0).toUpperCase() + word.slice(1);
+            return sentence.charAt(0).toUpperCase() + sentence.slice(1);
         }
 
         /**
-        // Upon receiving a status update, switch between the main interface and the setup wizard if necessary.
+        * Upon receiving a status update, switch between the main interface and the setup wizard if necessary.
         */
         async function decideView()
         {
@@ -466,7 +465,7 @@
         //
 
         /**
-        Send an API call to obtain the device status from the client.
+        * Send an API call to obtain the device status from the client.
         */
         async function updateStatus()
         {
@@ -639,7 +638,7 @@
             {
                 title: 'Smart Shade Setup',
                 subtitle: 'Calibration (Sunshade)',
-                body: `First, set the Sunshade <b>fully up<b> using the controls below.`,
+                body: `First, set the Sunshade <b>fully up</b> using the controls below.`,
                 renderExtras: () => `
                     <div class=\"row\" style=\"justify-content:center; gap:1rem; margin-top:0.6rem;\">
                     <button id=\"wUp1\" class=\"btn\"><span class=\"icon\">north</span>Up</button>
@@ -650,7 +649,7 @@
             {
                 title: 'Smart Shade Setup',
                 subtitle: 'Calibration (Blackout)',
-                body: `Next, set the Blackout Shade <b>fully up<b> using the controls below.<br>It should be perfectly level with the Sunshade.`,
+                body: `Next, set the Blackout Shade <b>fully up</b> using the controls below.<br>It should be perfectly level with the Sunshade.`,
                 renderExtras: () => `
                     <div class=\"row\" style=\"justify-content:center; gap:1rem; margin-top:0.6rem;\">
                     <button id=\"wUp2\" class=\"btn\"><span class=\"icon\">north</span>Up</button>
