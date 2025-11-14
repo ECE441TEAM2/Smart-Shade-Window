@@ -55,6 +55,7 @@
       border-bottom: 1px solid #eee;
       position: relative;
     }
+
     .header h1 { font-size: 1.25rem; margin: 0; color: var(--accent); }
 
     .gear-btn 
@@ -77,11 +78,11 @@
       gap: 0.5rem;
     }
 
-         *     .card .row .btn 
+    .card .row .btn 
     {
       flex: 1 1 calc(33.3% - 0.5rem);
       min-width: 100px;
-      text-align:        *  center;
+      text-align: center;
       justify-content: center;
     }
 
@@ -129,9 +130,9 @@
     .btn:hover { background-color: #d8caff; }
     .btn:active { transform: translateY(1px); }
     .btn.primary { background: var(--accent); color: #fff; }
-    .btn.danger { color: #fff;          * background: #c43a3a; }
+    .btn.danger { color: #fff; background: #c43a3a; }
 
-    .icon { font-family: 'Material Icons';        *  font-size: 22px; }
+    .icon { font-family: 'Material Icons'; font-size: 22px; }
 
     input[type="range"] { width: 100%; accent-color: #7b4cff; }
     input[type="time"], select, input[type="number"], input[type="text"] 
@@ -151,8 +152,7 @@
       background: #fff;
       border: 1px solid #eee;
       border-radius: 10px;
-                   *   * 
-           padding: 0.55rem 0.7rem;
+      padding: 0.55rem 0.7rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -166,22 +166,21 @@
 
     /* Wizard nav */
          * 
-    .nav { display: flex; justify-content: space-between; align-items: c        * enter; padding: 0.5rem 0.8rem 0.8rem; border-top: 1px solid #eee; }
+    .nav { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.8rem 0.8rem; border-top: 1px solid #eee; }
     .arrow-btn { background: none; border: none; cursor: pointer; }
     .arrow-btn .material-icons { font-size: 36px; color: var(--accent); }
 
     /* Bottom control panel bar */
     .tabbar { display: flex; gap: 0.5rem; padding: 0.6rem; border-top: 1px solid #eee; background: #fff; }
-    .tabb         * ar .btn { flex: 1; justify-content: center; }
+    .tabbar .btn { flex: 1; justify-content: center; }
 
     .hidden { display: none !important; }
 
-         *         *    /* Simple modal */
+    /* Simple modal */
     .modal-backdrop 
     {
       position: absolute; inset: 0; background: rgba(0,0,0,0.35);
-      displa                *   * 
-        y: flex; align-items: flex-end; justify-content: center;
+      display: flex; align-items: flex-end; justify-content: center;
       padding: 1rem; z-index: 10;
     }
 
@@ -193,7 +192,7 @@
     <div class="phone-frame">
         <div class="header">
             <h1 id="title">Smart Shade</h1>
-             *         <button id="gearBtn" class="gear-btn" aria-label="Settings"><span class="material-icons">settings</span></button>
+            <button id="gearBtn" class="gear-btn" aria-label="Settings"><span class="material-icons">settings</span></button>
         </div>
 
         <div class="container">
@@ -208,8 +207,6 @@
                     <div class="statusline">Mode: <strong id="modeDisplay">—</strong></div>
                     <div class="statusline">Active Shade: <strong id="shadeDisplay">—</strong></div>
                     <div class="statusline">Current Step: <strong id="stepDisplay">0</strong></div>
-                 *  * 
-         
                 </div>
 
                 <!-- Mode Controls -->
@@ -218,9 +215,9 @@
                     <div class="row">
                         <button class="btn" onclick="setMode('auto')"><span class="icon">autorenew</span>Auto</button>
                         <button class="btn" onclick="setMode('manual')"><span class="icon">touch_app</span>Manual</button>
-                            *      <button class="btn" onclick="setMode('schedule')"><span class="icon">schedule</span>Schedule</button>
+                        <button class="btn" onclick="setMode('schedule')"><span class="icon">schedule</span>Schedule</button>
                     </div>
-                    <div class="statusline hidden" id="scheduleHint">You are in schedule mode. Your schedule        * s are listed below. Use the top-right <b>gear</b> to edit schedules.</div>
+                    <div class="statusline hidden" id="scheduleHint">You are in schedule mode. Your schedules are listed below. Use the top-right <b>gear</b> to edit schedules.</div>
                 </div>
 
                 <!-- Blind Controls (manual only) -->
@@ -235,11 +232,11 @@
 
                 <!-- Sensors (auto only) -->
                 <div id="sensorsCard" class="card hidden">
-                    <h2>Sensor        * s</h2>
+                    <h2>Sensors</h2>
                     <div class="row space">
                         <div class="statusline">Light readings</div>
                         <button class="btn" onclick="refreshSensors()"><span class="icon">refresh</span>Refresh</button>
-                    </div>
+                    </div>        * 
                     <div id="sensorContainer" class="list">Shown in Auto mode</div>
                 </div>
 
@@ -359,20 +356,22 @@
         /** 
         * Transforms the given button into a repeatable button (hold to repeat).
         * Useful for manual controls.
-        * @param 
         */
         function makeRepeatable(button, onTick, interval = 140) {
             let t = null;
             // listen for the button to begin being touched (see below for the event listener)
-            const start = (e) => {
+            const start = (e) =>
+            {
                 e.preventDefault();
                 if (t) return;
                 onTick();
                 t = setInterval(onTick, interval);
             };
             // and listen for the button no longer being touched
-            const stop = () => {
-                if (t) {
+            const stop = () =>
+            {
+                if (t)
+                {
                     clearInterval(t);
                     t = null;
                 }
@@ -385,7 +384,8 @@
         /**
         * Transition to the setup wizard, hiding the main interface if it is active.
         */
-        function showWizard() {
+        function showWizard()
+        {
             show(qs('wizardRoot'));
             show(qs('wizardNav'));
             hide(qs('panelRoot'));
@@ -440,19 +440,23 @@
         * Capitalize the first letter of a given string. Used for clean display of mode and blind names.
         * @param {string} sentence
         */
-        function capitalize(sentence) {
+        function capitalize(sentence)
+        {
             return word.charAt(0).toUpperCase() + word.slice(1);
-               }
+        }
 
         /**
         // Upon receiving a status update, switch between the main interface and the setup wizard if necessary.
         */
-        async function decideView() {
-            try {
+        async function decideView()
+        {
+            try
+            {
                 await updateStatus();
                 if (statusState.mode === 'setup') showWizard(); else showPanel();
             }
-            catch (e) {
+            catch (e)
+            {
                 console.error('Failed to decide view:', e); showPanel();
             }
         }
@@ -464,7 +468,8 @@
         /**
         Send an API call to obtain the device status from the client.
         */
-        async function updateStatus() {
+        async function updateStatus()
+        {
             const res = await fetch('/api/status');
             const data = await res.json();
             statusState.mode = data.mode;
@@ -472,7 +477,8 @@
             statusState.step = data.step;
 
             // update various UI elements based on this information
-            if (qs('modeDisplay')) {
+            if (qs('modeDisplay'))
+            {
                 qs('modeDisplay').textContent = capitalize(statusState.mode);
                 qs('shadeDisplay').textContent = capitalize(statusState.active_shade);
                 qs('stepDisplay').textContent = statusState.step;
@@ -486,7 +492,8 @@
         * Send an API call to instruct the client to change modes.
         * @param {string} mode 'auto', 'manual', 'schedule', or 'setup'
         */
-        async function setMode(mode) {
+        async function setMode(mode)
+        {
             await fetch('/api/mode', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode }) });
             await updateStatus();
             if (statusState.mode === 'setup') showWizard(); else showPanel();
@@ -497,20 +504,35 @@
         * From this end, movement is done 10 steps at a time because each step is so small. Thus only direction must be specified.
         * @param {string} direction 'up' or 'down'
         */
-        async function move(direction) {
+        async function move(direction)
+        {
             await fetch('/api/move', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ direction, steps: 10 }) });
+            updateStatus();
+        }
+
+        /**
+        * Send an API call to instruct the client to move the blind up or down.
+        * From this end, movement is done 10 steps at a time because each step is so small. Thus only direction must be specified.
+        * This movement function is unsafe in that it ignores operation limits of the blind. It is only used for setup.
+        * @param {string} direction 'up' or 'down'
+        */
+        async function move_unsafe(direction) {
+            await fetch('/api/move_unsafe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ direction, steps: 10 }) });
             updateStatus();
         }
 
         /**
         * Send an API call to instruct the client to swap the active blind.
         */
-        async function swapBlind() {
-            try {
+        async function swapBlind()
+        {
+            try
+            {
                 await fetch('/api/swap', { method: 'POST' });
                 updateStatus();
             }
-            catch (e) {
+            catch (e)
+            {
                 console.error('Swap failed', e);
             }
         }
@@ -573,16 +595,17 @@
             await setMode('setup');
         });
 
-        // Open schedule editor (does NOT wipe; builds on existing schedules)
-        function paintSchedEditor() {
+        // Open schedule editor
+        function paintSchedEditor()
+        {
             const level = qs('mLevel');
             level.innerHTML = sensorSteps.length ? sensorSteps.map((_, i) => `<option value='${i + 1}'>Sensor ${i + 1}</option>`).join('') : `<option disabled>No Sensors added</option>`;
             const list = qs('mList');
             list.innerHTML = schedules.length ? schedules.map((s, i) => `
-                                                    <div class='list-item'>
-                                                      <div><strong>${s.time}</strong> — ${s.motor === '1' ? 'Sunshade' : 'Blackout'} → Sensor ${s.level}</div>
-                                                      <button class='delete' data-i='${i}'><span class='icon'>delete</span></button>
-                                                    </div>`).join('') : 'No schedules yet.';
+                <div class='list-item'>
+                <div><strong>${s.time}</strong> — ${s.motor === '1' ? 'Sunshade' : 'Blackout'} → Sensor ${s.level}</div>
+                <button class='delete' data-i='${i}'><span class='icon'>delete</span></button>
+                </div>`).join('') : 'No schedules yet.';
             list.querySelectorAll('.delete').forEach(b => b.addEventListener('click', () => { const i = +b.getAttribute('data-i'); schedules.splice(i, 1); paintSchedEditor(); }));
         }
 
@@ -605,70 +628,95 @@
         /* ------------------------------------------------------------------
          * Setup Wizard (ported + adapted)
          * ------------------------------------------------------------------ */
-        const steps = [
-            { title: 'Smart Shade Setup', subtitle: 'Welcome', body: `Begin setup for both blinds.<br><br>Kit includes:<br>• Two Blinds<br>• Light sensor<br>• Motor Housing Structure`, renderExtras: () => '' },
+        const steps =
+        [
             {
-                title: 'Smart Shade Setup', subtitle: 'Calibration (Sunshade)', body: `Set the sunshade <b>FULLY UP</b> by using the arrow keys below`, renderExtras: () => `
-                                                      <div class=\"row\" style=\"justify-content:center; gap:1rem; margin-top:0.6rem;\">
-                                                        <button id=\"wUp1\" class=\"btn\"><span class=\"icon\">north</span>Up</button>
-                                                        <button id=\"wDown1\" class=\"btn\"><span class=\"icon\">south</span>Down</button>
-                                                      </div>
-                                                      <div class=\"statusline\" style=\"text-align:center; margin-top:0.3rem;\">Current: <strong id=\"motorStep1\">${motorSteps[1]}</strong> steps</div>`, motor: 1
+                title: 'Smart Shade Setup',
+                subtitle: 'Welcome',
+                body: `This wizard will guide you in setting up the configuration for your Smart Shade.<br><br>Before continuing, please ensure all light sensors you want to use are plugged into the device.<br>Use the arrow below when you are ready to proceed.`,
+                renderExtras: () => ''
             },
             {
-                title: 'Smart Shade Setup', subtitle: 'Calibration (Blackout)', body: `Set the blackout <b>FULLY UP</b> by using the arrow keys below`, renderExtras: () => `
-                                                      <div class=\"row\" style=\"justify-content:center; gap:1rem; margin-top:0.6rem;\">
-                                                        <button id=\"wUp2\" class=\"btn\"><span class=\"icon\">north</span>Up</button>
-                                                        <button id=\"wDown2\" class=\"btn\"><span class=\"icon\">south</span>Down</button>
-                                                      </div>
-                                                      <div class=\"statusline\" style=\"text-align:center; margin-top:0.3rem;\">Current: <strong id=\"motorStep2\">${motorSteps[2]}</strong> steps</div>`, motor: 2
+                title: 'Smart Shade Setup',
+                subtitle: 'Calibration (Sunshade)',
+                body: `First, set the Sunshade <b>fully up<b> using the controls below.`,
+                renderExtras: () => `
+                    <div class=\"row\" style=\"justify-content:center; gap:1rem; margin-top:0.6rem;\">
+                    <button id=\"wUp1\" class=\"btn\"><span class=\"icon\">north</span>Up</button>
+                    <button id=\"wDown1\" class=\"btn\"><span class=\"icon\">south</span>Down</button>
+                    </div>
+                    <div class=\"statusline\" style=\"text-align:center; margin-top:0.3rem;\">Current: <strong id=\"motorStep1\">${motorSteps[1]}</strong> steps</div>`, motor: 1
             },
             {
-                title: 'Smart Shade Setup', subtitle: 'Sensor Positions', body: `Move the sunshade and tap “Add Sensor” to store a sensor position.`, renderExtras: () => `
-                                                      <div class=\"card\" style=\"margin-top:0.4rem;\">
-                                                        <div class=\"row space\">
-                                                          <div><b>Sunshade step</b>: <span id=\"motorStep1b\">${motorSteps[1]}</span></div>
-                                                          <div class=\"row\">
-                                                            <button id=\"wUp1b\" class=\"btn\"><span class=\"icon\">north</span></button>
-                                                            <button id=\"wDown1b\" class=\"btn\"><span class=\"icon\">south</span></button>
-                                                          </div>
-                                                        </div>
-                                                        <div class=\"row\" style=\"justify-content:center; margin-top:0.5rem;\">
-                                                          <button id=\"addSensorBtn\" class=\"btn\"><span class=\"icon\">add</span>Add Sensor</button>
-                                                        </div>
-                                                        <div id=\"sensorList\" class=\"list\" style=\"margin-top:0.5rem;\"></div>
-                                                      </div>`, sensor_steps: true
+                title: 'Smart Shade Setup',
+                subtitle: 'Calibration (Blackout)',
+                body: `Next, set the Blackout Shade <b>fully up<b> using the controls below.<br>It should be perfectly level with the Sunshade.`,
+                renderExtras: () => `
+                    <div class=\"row\" style=\"justify-content:center; gap:1rem; margin-top:0.6rem;\">
+                    <button id=\"wUp2\" class=\"btn\"><span class=\"icon\">north</span>Up</button>
+                    <button id=\"wDown2\" class=\"btn\"><span class=\"icon\">south</span>Down</button>
+                    </div>
+                    <div class=\"statusline\" style=\"text-align:center; margin-top:0.3rem;\">Current: <strong id=\"motorStep2\">${motorSteps[2]}</strong> steps</div>`, motor: 2
             },
             {
-                title: 'Smart Shade Setup', subtitle: 'Light Sensor Threshold', body: `Adjust the light sensor threshold according to your needs.<br><br>Light Sensor currently reads: <b>${parseInt((light / 120) * 100)}%</b>`, renderExtras: () => `
-                                                      <div class=\"card\">
-                                                        <div style=\"font-size:1.4rem; font-weight:700; text-align:center;\" id=\"thresholdValue\">${threshold}%</div>
-                                                        <input type=\"range\" id=\"thresholdSlider\" min=\"0\" max=\"100\" value=\"${threshold}\">
-                                                      </div>`, threshold: true
+                title: 'Smart Shade Setup',
+                subtitle: 'Sensor Positions',
+                body: `Move the sunshade and tap “Add Sensor” to store a sensor position.`,
+                renderExtras: () => `
+                    <div class=\"card\" style=\"margin-top:0.4rem;\">
+                    <div class=\"row space\">
+                    <div><b>Sunshade step</b>: <span id=\"motorStep1b\">${motorSteps[1]}</span></div>
+                    <div class=\"row\">
+                    <button id=\"wUp1b\" class=\"btn\"><span class=\"icon\">north</span></button>
+                    <button id=\"wDown1b\" class=\"btn\"><span class=\"icon\">south</span></button>
+                    </div>
+                    </div>
+                    <div class=\"row\" style=\"justify-content:center; margin-top:0.5rem;\">
+                    <button id=\"addSensorBtn\" class=\"btn\"><span class=\"icon\">add</span>Add Sensor</button>
+                    </div>
+                    <div id=\"sensorList\" class=\"list\" style=\"margin-top:0.5rem;\"></div>
+                    </div>`, sensor_steps: true
             },
             {
-                title: 'Schedules', subtitle: 'Automation Setup', body: 'Add an optional schedule for your Smart Shades', renderExtras: () => `
-                                                      <div class=\"card\">
-                                                        <div class=\"row\" style=\"gap:0.5rem; flex-wrap:wrap;\">
-                                                          <input type=\"time\" id=\"scheduleTime\" />
-                                                          <select id=\"scheduleMotor\"><option value=\"1\">Sunshade</option><option value=\"2\">Blackout</option></select>
-                                                          <select id=\"scheduleLevel\"></select>
-                                                          <button id=\"addScheduleBtn\" class=\"btn\"><span class=\"icon\">add</span></button>
-                                                        </div>
-                                                        <div id=\"scheduleList\" class=\"list\" style=\"margin-top:0.5rem;\"></div>
-                                                      </div>`, schedules: true
+                title: 'Smart Shade Setup',
+                subtitle: 'Light Sensor Threshold',
+                body: `Adjust the light sensor threshold according to your needs.<br><br>Light Sensor currently reads: <b>${parseInt((light / 120) * 100)}%</b>`,
+                renderExtras: () => `
+                    <div class=\"card\">
+                    <div style=\"font-size:1.4rem; font-weight:700; text-align:center;\" id=\"thresholdValue\">${threshold}%</div>
+                    <input type=\"range\" id=\"thresholdSlider\" min=\"0\" max=\"100\" value=\"${threshold}\">
+                    </div>`, threshold: true
             },
             {
-                title: 'Summary', subtitle: 'Review & Save', body: 'Review setup, then press “Save Configuration.”', renderExtras: () => `
-                                                      <div id=\"summaryBox\" class=\"summary-box\" style=\"margin-top:0.5rem;\"></div>
-                                                      <div class=\"row\" style=\"justify-content:center; margin-top:0.6rem;\">
-                                                        <button id=\"saveBtn\" class=\"btn primary\"><span class=\"icon\">save</span>Save Configuration</button>
-                                                      </div>
-                                                      <div id=\"saveNotice\" class=\"statusline\" style=\"text-align:center; margin-top:0.4rem;\"></div>`, summary: true
+                title: 'Schedules',
+                subtitle: 'Automation Setup',
+                body: 'Add an optional schedule for your Smart Shades',
+                renderExtras: () => `
+                    <div class=\"card\">
+                    <div class=\"row\" style=\"gap:0.5rem; flex-wrap:wrap;\">
+                    <input type=\"time\" id=\"scheduleTime\" />
+                    <select id=\"scheduleMotor\"><option value=\"1\">Sunshade</option><option value=\"2\">Blackout</option></select>
+                    <select id=\"scheduleLevel\"></select>
+                    <button id=\"addScheduleBtn\" class=\"btn\"><span class=\"icon\">add</span></button>
+                    </div>
+                    <div id=\"scheduleList\" class=\"list\" style=\"margin-top:0.5rem;\"></div>
+                    </div>`, schedules: true
+            },
+            {
+                title: 'Summary',
+                subtitle: 'Review & Save',
+                body: 'Review setup, then press “Save Configuration.”',
+                renderExtras: () => `
+                    <div id=\"summaryBox\" class=\"summary-box\" style=\"margin-top:0.5rem;\"></div>
+                    <div class=\"row\" style=\"justify-content:center; margin-top:0.6rem;\">
+                    <button id=\"saveBtn\" class=\"btn primary\"><span class=\"icon\">save</span>Save Configuration</button>
+                    </div>
+                    <div id=\"saveNotice\" class=\"statusline\" style=\"text-align:center; margin-top:0.4rem;\"></div>`, summary: true
             },
         ];
 
-        function renderStep() {
+        function renderStep()
+        {
             const root = qs('wizardRoot'); const s = steps[currentStep];
             root.innerHTML = `<div class="card"><h2>${s.title}</h2><div class="statusline"><strong>${s.subtitle}</strong></div><p style="margin-top:0.3rem;">${s.body}</p>${s.renderExtras ? s.renderExtras() : ''}</div>`;
 
@@ -681,14 +729,17 @@
             hookHold('wUp2', -10, 2); hookHold('wDown2', 10, 2);
             hookHold('wUp1b', -10, 1); hookHold('wDown1b', 10, 1);
 
-            if (s.motor) {
+            if (s.motor)
+            {
                 ensureCorrectBlind(s.motor);
             }
 
             // Sensor steps
-            if (s.sensor_steps) {
+            if (s.sensor_steps)
+            {
                 const addBtn = qs('addSensorBtn'); const list = qs('sensorList');
-                function paint() {
+                function paint()
+                {
                     list.innerHTML = sensorSteps.map((l, i) => `<div class='list-item'><div><strong>Sensor ${i + 1}</strong>: ${l.step} steps</div><button class='delete' data-index='${i}'><span class='icon'>delete</span></button></div>`).join('');
                     list.querySelectorAll('.delete').forEach(btn => btn.addEventListener('click', () => { const idx = Number(btn.getAttribute('data-index')); sensorSteps.splice(idx, 1); paint(); }));
                 }
@@ -701,16 +752,19 @@
             }
 
             // Threshold slider
-            if (s.threshold) {
+            if (s.threshold)
+            {
                 const slider = qs('thresholdSlider'); const val = qs('thresholdValue');
                 slider.addEventListener('input', () => { threshold = parseInt(slider.value, 10); val.textContent = `${threshold}%`; });
             }
 
             // Schedules builder
-            if (s.schedules) {
+            if (s.schedules)
+            {
                 const timeInput = qs('scheduleTime'); const motorSelect = qs('scheduleMotor'); const levelSelect = qs('scheduleLevel'); const addBtn = qs('addScheduleBtn'); const list = qs('scheduleList');
                 const fillLevelOptions = () => { levelSelect.innerHTML = sensorSteps.length ? sensorSteps.map((_, i) => `<option value='${i + 1}'>Sensor ${i + 1}</option>`).join('') : `<option disabled>No Sensors added</option>`; };
-                function paintSchedules() {
+                function paintSchedules()
+                {
                     list.innerHTML = schedules.map((s, i) => `<div class='list-item'><div><strong>${s.time}</strong> — ${s.motor === '1' ? 'Sunshade' : 'Blackout'} → Sensor Level ${s.level}</div><button class='delete' data-index='${i}'><span class='icon'>delete</span></button></div>`).join('');
                     list.querySelectorAll('.delete').forEach(btn => btn.addEventListener('click', () => { const idx = btn.getAttribute('data-index'); schedules.splice(idx, 1); paintSchedules(); }));
                 }
@@ -719,14 +773,15 @@
             }
 
             // Summary + save
-            if (s.summary) {
+            if (s.summary)
+            {
                 const box = qs('summaryBox'); const saveBtn = qs('saveBtn'); const saveMsg = qs('saveNotice');
                 const motor1StepsFinal = config.motors[0] ?? motorSteps[1]; const motor2StepsFinal = config.motors[1] ?? motorSteps[2];
                 box.innerHTML = `
-                                                      <div class='card'><div><strong>Calibration</strong></div><div>Sunshade: ${motor1StepsFinal} → 0 steps</div><div>Blackout: ${motor2StepsFinal} → 0 steps</div></div>
-                                                      <div class='card'><div><strong>Levels</strong></div>${sensorSteps.length ? sensorSteps.map((l, i) => `Sensor ${i + 1}: ${l.step} steps`).join('<br>') : 'No Sensors added'}</div>
-                                                      <div class='card'><div><strong>Light Threshold</strong> ${threshold}%</div></div>
-                                                      <div class='card'><div><strong>Schedules</strong></div>${schedules.length ? schedules.map(s => `${s.time} → ${s.motor === '1' ? 'Sunshade' : 'Blackout'}, Sensor ${s.level}`).join('<br>') : 'No schedules added'}</div>`;
+                    <div class='card'><div><strong>Calibration</strong></div><div>Sunshade: ${motor1StepsFinal} → 0 steps</div><div>Blackout: ${motor2StepsFinal} → 0 steps</div></div>
+                    <div class='card'><div><strong>Levels</strong></div>${sensorSteps.length ? sensorSteps.map((l, i) => `Sensor ${i + 1}: ${l.step} steps`).join('<br>') : 'No Sensors added'}</div>
+                    <div class='card'><div><strong>Light Threshold</strong> ${threshold}%</div></div>
+                    <div class='card'><div><strong>Schedules</strong></div>${schedules.length ? schedules.map(s => `${s.time} → ${s.motor === '1' ? 'Sunshade' : 'Blackout'}, Sensor ${s.level}`).join('<br>') : 'No schedules added'}</div>`;
 
                 saveBtn.addEventListener('click', async () => {
                     const settings = { motors: [motor1StepsFinal, motor2StepsFinal], sensor_steps: sensorSteps.map(s => s.step), threshold };
@@ -741,13 +796,15 @@
             }
         }
 
-        function changeStep(delta, motor) {
+        function changeStep(delta, motor)
+        {
             motorSteps[motor] = motorSteps[motor] + delta;
             document.querySelectorAll(`#motorStep${motor}, #motorStep${motor}b`).forEach(el => (el.textContent = motorSteps[motor]));
             moveDuringSetup(delta < 0 ? 'up' : 'down');
         }
 
-        function moveDuringSetup(direction) {
+        function moveDuringSetup(direction)
+        {
             fetch('/api/move', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -755,8 +812,10 @@
             }).catch(err => console.error('Setup move failed', err));
         }
 
-        async function ensureCorrectBlind(motor) {
-            try {
+        async function ensureCorrectBlind(motor)
+        {
+            try
+            {
                 const res = await fetch('/api/status');
                 const data = await res.json();
                 const active = data.active_shade;
@@ -765,20 +824,26 @@
                     await fetch('/api/swap_dumb', { method: 'POST' });
                     await new Promise(r => setTimeout(r, 500));
                 }
-            } catch (e) {
+            }
+            catch (e)
+            {
                 console.error('Failed to ensure correct blind', e);
             }
         }
 
-        async function ensureSunshadeActive() {
-            try {
+        async function ensureSunshadeActive()
+        {
+            try
+            {
                 const res = await fetch('/api/status');
                 const data = await res.json();
                 if (data.active_shade !== 'sunshade') {
                     await fetch('/api/swap_dumb', { method: 'POST' });
                     await new Promise(r => setTimeout(r, 500));
                 }
-            } catch (e) {
+            }
+            catch (e)
+            {
                 console.error('Failed to set sunshade active', e);
             }
         }
@@ -794,7 +859,8 @@
         /* ------------------------------------------------------------------
          * App bootstrap & polling
          * ------------------------------------------------------------------ */
-        async function bootstrap() {
+        async function bootstrap()
+        {
             // Make Up/Down buttons holdable in panel
             makeRepeatable(qs('btnUp'), () => move('up'));
             makeRepeatable(qs('btnDown'), () => move('down'));
@@ -803,15 +869,20 @@
             if (pollTimer) clearInterval(pollTimer);
             pollTimer = setInterval(async () => {
                 const oldMode = statusState.mode;
-                try {
+                try
+                {
                     await updateStatus();
                     if (oldMode !== statusState.mode) { if (statusState.mode === 'setup') showWizard(); else showPanel(); }
                     if (statusState.mode === 'auto') refreshSensors();
-                } catch (e) { console.warn('Polling failed:', e); }
+                }
+                catch (e)
+                {
+                    console.warn('Polling failed:', e);
+                }
             }, POLL_MS);
         }
 
         bootstrap();
     </script>
 </body>
-    </html>
+</html>

@@ -139,6 +139,7 @@ def move_motor_to_step(new_step, safety=True):
             return
     global step
     delta = new_step - step
+    if delta == 0: return
     logging.debug(f"move_motor_to_step: Moving from step {step} to {new_step} (delta {delta})")
     # if positive, move down
     if delta > 0:
@@ -202,7 +203,8 @@ def setup_mode():
 
 def automatic_mode():
     """Iterates through each sensor's readings from top to bottom.
-    For the first one that it finds is too bright, the blind is moved to match that sensor's height."""
+    For the first one that it finds is too bright, the blind is moved to match that sensor's height.
+    Otherwise,"""
     for i, lux in enumerate(read_sensors()):
         if lux is None:
             continue
@@ -288,6 +290,18 @@ def api_move():
         move_motor_to_step(step - steps)
     elif direction == "down":
         move_motor_to_step(step + steps)
+    return jsonify({"status": "ok", "current_step": step})
+
+@app.route("/api/move_unsafe", methods=["POST"])
+def api_move_unsafe():
+    """Service webapp request to move the blind up/down while ignoring safety constraints."""
+    data = request.json
+    direction = data.get("direction")
+    steps = int(data.get("steps", 10))
+    if direction == "up":
+        move_motor_to_step(step - steps, False)
+    elif direction == "down":
+        move_motor_to_step(step + steps, False)
     return jsonify({"status": "ok", "current_step": step})
 
 @app.route("/api/mode", methods=["POST"])
