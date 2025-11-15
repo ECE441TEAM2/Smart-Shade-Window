@@ -90,6 +90,7 @@ def load_settings():
         # if there is a sensor mismatch, force setup to run
         if sum(1 for s in settings["sensor_mask"] if s is not None) != sum(1 for s in sensor_array if s is not None):
             logging.warning("Sensor mismatch detected. Launching setup.")
+            op_mode = "setup"
             setup_mode()
         return
 
@@ -339,37 +340,47 @@ def api_save():
     settings in memory, then calls save_settings() to write them to SETTINGS_FILE.
     Schedule data is dumped straight to SCHEDULE_FILE."""
     data = request.json or {}
-    #incoming = data.get("settings", {}) or {}
-    #schedules_payload = data.get("schedules", [])
+    settings_payload = data.get("settings", {}) or {}
+    schedules_payload = data.get("schedules", [])
 
     # DEBUG: dump the entire received payload
+    #try:
+    #    with open("DEBUG_DUMP.json", "w") as f:
+    #        json.dump(data, f, indent=4)
+    #except Exception as e:
+    #    logging.error(f"DEBUG DUMP FAILED: {e}")
+    #
+    #return jsonify({"status": "ok"})
+    
     try:
-        with open("DEBUG_DUMP.json", "w") as f:
-            json.dump(data, f, indent=4)
-    except Exception as e:
-        logging.error(f"DEBUG DUMP FAILED: {e}")
-
-    return jsonify({"status": "ok"})
-    '''
-    try:
+        # I'd be really surprised if any of this ever managed to trip, but you already know it will find a way to
         global op_mode, active_shade, step, threshold, sensor_steps
-        if "op_mode" in incoming:
-            op_mode = incoming["op_mode"]
-        if "active_shade" in incoming:
-            active_shade = incoming["active_shade"]
-        if "step" in incoming:
+        if "op_mode" in settings_payload:
+            op_mode = settings_payload["op_mode"]
+        if "active_shade" in settings_payload:
+            active_shade = settings_payload["active_shade"]
+        if "step" in settings_payload:
             try:
-                step = int(incoming["step"])
+                step = int(settings_payload["step"])
             except (TypeError, ValueError):
-                logging.error(f"api_save: Invalid step value received: {incoming['step']}")
-        if "threshold" in incoming:
+                logging.error(f"api_save: Invalid step value received: {settings_payload['step']}")
+        if "threshold" in settings_payload:
             try:
-                threshold = int(incoming["threshold"])
+                threshold = int(settings_payload["threshold"])
             except (TypeError, ValueError):
-                logging.warning(f"api_save: Invalid threshold received: {incoming['threshold']}")
-        incoming_sensor_steps = incoming.get("sensor_steps")
+                logging.warning(f"api_save: Invalid threshold received: {settings_payload['threshold']}")
+        incoming_sensor_steps = settings_payload.get("sensor_steps")
+        # merge incoming sensor steps according to the current sensor mask
         if incoming_sensor_steps and isinstance(incoming_sensor_steps, list):
+            mask = sensor_mask_helper()
+            steps_iter = iter(incoming_sensor_steps)
+            merged = [next(steps_iter) if x == 1 else 0 for x in mask]
+            sensor_steps = merged
 
+        # save everything we just imported to file
+        save_settings()
+
+        # and now deal with the schedule
         try:
             with open(SCHEDULE_FILE, "w") as f:
                 json.dump(data.get("schedules"), f, indent=4)
@@ -381,8 +392,7 @@ def api_save():
     except Exception as e:
         logging.error(f"api_save: Save failed: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
-    '''
-
+    
 @app.route("/api/zero_step", methods=["POST"])
 def api_zero_step():
     """Service webapp request to set the current step position to zero."""

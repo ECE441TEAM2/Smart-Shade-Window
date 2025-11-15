@@ -1,3 +1,4 @@
+<!-- ECE 441 Fall 2025 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -298,8 +299,8 @@
                     <div class="row" style="gap:0.5rem; flex-wrap:wrap;">
                         <input type="time" id="mTime" />
                         <select id="mMotor">
-                            <option value="1">Sunshade</option>
-                            <option value="2">Blackout</option>
+                            <option value="sunshade">Sunshade</option>
+                            <option value="blackout">Blackout</option>
                         </select>
                         <select id="mLevel"></select>
                         <button id="mAdd" class="btn"><span class="icon">add</span></button>
@@ -336,7 +337,7 @@
         let currentStep = 0;
         let motorSteps = { 1: 0, 2: 0 };
         let sensorSteps = [];            // [{step:number}]
-        let schedules = [];              // [{time, motor:'1'|'2', level:'1'..}]
+        let schedules = [];              // [{time, motor:'sunshade'|'blackout', level:'1'..}]
         let threshold = 2500;
         let light = 48;                  // demo for UI only
 
@@ -431,7 +432,7 @@
             const list = qs('activeScheduleList');
             if (!list) return;
             list.innerHTML = schedules.length
-                ? schedules.map(s => `<div class='list-item'>${s.time} — ${s.motor === '1' ? 'Sunshade' : 'Blackout'} → Sensor ${s.level}</div>`).join('')
+                ? schedules.map(s => `<div class='list-item'>${s.time} — ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'} → Sensor ${s.level}</div>`).join('')
                 : 'No schedules configured.';
         }
 
@@ -616,7 +617,7 @@
             const list = qs('mList');
             list.innerHTML = schedules.length ? schedules.map((s, i) => `
                 <div class='list-item'>
-                <div><strong>${s.time}</strong> — ${s.motor === '1' ? 'Sunshade' : 'Blackout'} → Sensor ${s.level}</div>
+                <div><strong>${s.time}</strong> — ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'} → Sensor ${s.level}</div>
                 <button class='delete' data-i='${i}'><span class='icon'>delete</span></button>
                 </div>`).join('') : 'No schedules yet.';
             list.querySelectorAll('.delete').forEach(b => b.addEventListener('click', () => { const i = +b.getAttribute('data-i'); schedules.splice(i, 1); paintSchedEditor(); }));
@@ -629,7 +630,11 @@
         qs('mClose').addEventListener('click', () => hide(qs('schedModal')));
         qs('mAdd').addEventListener('click', () => {
             const t = qs('mTime').value; const m = qs('mMotor').value; const l = qs('mLevel').value;
-            if (!t || !m || !l) return; schedules.push({ time: t, motor: m, level: l }); qs('mTime').value = ''; paintSchedEditor(); paintScheduleList();
+            if (!t || !m || !l) return;
+            schedules.push({ time: t, motor: m, level: l });
+            qs('mTime').value = '';
+            paintSchedEditor();
+            paintScheduleList();
         });
         qs('mSave').addEventListener('click', async () => {
             const settings = makeSettingsPayload();
@@ -691,7 +696,7 @@
             {
                 title: 'Smart Shade Setup',
                 subtitle: 'Light Sensitivity',
-                body: `You may adjust the sensitivity of the light sensors if you are in an overcast or particularly bright area.<br><br>If you are unsure, <b>2500</b> is generally a good amount.<br><br>The highest light level currently being read is <b>${light}</b>.`,
+                body: `You may adjust the sensitivity of the light sensors if you are in an overcast or particularly bright area.<br>A higher reading indicates a greater amount of light.<br><br>If you are unsure, <b>2500</b> is typically a good amount.<br><br>The highest light level currently being read is <b>${light}</b>.`,
                 renderExtras: () => `
                     <div class=\"card\">
                     <div style=\"font-size:1.4rem; font-weight:700; text-align:center;\" id=\"thresholdValue\">${threshold}</div>
@@ -701,12 +706,12 @@
             {
                 title: 'Smart Shade Setup',
                 subtitle: '(Optional) Schedule Configuration',
-                body: 'You may schedule actions for the shade to take automatically when it is in Schedule Mode.<br>This can be completed or added to at a later time.',
+                body: 'You may schedule actions for the shade to perform automatically when it is in Schedule Mode.<br>This can be completed or added to at a later time.',
                 renderExtras: () => `
                     <div class=\"card\">
                     <div class=\"row\" style=\"gap:0.5rem; flex-wrap:wrap;\">
                     <input type=\"time\" id=\"scheduleTime\" />
-                    <select id=\"scheduleMotor\"><option value=\"1\">Sunshade</option><option value=\"2\">Blackout</option></select>
+                    <select id=\"scheduleMotor\"><option value=\"sunshade\">Sunshade</option><option value=\"blackout\">Blackout</option></select>
                     <select id=\"scheduleLevel\"></select>
                     <button id=\"addScheduleBtn\" class=\"btn\"><span class=\"icon\">add</span></button>
                     </div>
@@ -807,7 +812,7 @@
                 const fillLevelOptions = () => { levelSelect.innerHTML = sensorSteps.length ? sensorSteps.map((_, i) => `<option value='${i + 1}'>Sensor ${i + 1}</option>`).join('') : `<option disabled>No Sensors added</option>`; };
                 function paintSchedules()
                 {
-                    list.innerHTML = schedules.map((s, i) => `<div class='list-item'><div><strong>${s.time}</strong> — ${s.motor === '1' ? 'Sunshade' : 'Blackout'} → Sensor Level ${s.level}</div><button class='delete' data-index='${i}'><span class='icon'>delete</span></button></div>`).join('');
+                    list.innerHTML = schedules.map((s, i) => `<div class='list-item'><div><strong>${s.time}</strong> — ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'} → Sensor Level ${s.level}</div><button class='delete' data-index='${i}'><span class='icon'>delete</span></button></div>`).join('');
                     list.querySelectorAll('.delete').forEach(btn => btn.addEventListener('click', () => { const idx = btn.getAttribute('data-index'); schedules.splice(idx, 1); paintSchedules(); }));
                 }
                 addBtn.addEventListener('click', () => { if (!timeInput.value || !levelSelect.value || !motorSelect.value) return; schedules.push({ time: timeInput.value, motor: motorSelect.value, level: levelSelect.value }); paintSchedules(); timeInput.value = ''; });
@@ -827,12 +832,11 @@
                     <div class='card'><div><strong>Calibration</strong></div><div>Sunshade: ${motor1StepsFinal} → 0 steps</div><div>Blackout: ${motor2StepsFinal} → 0 steps</div></div>
                     <div class='card'><div><strong>Levels</strong></div>${sensorSteps.length ? sensorSteps.map((l, i) => `Sensor ${i + 1}: ${l.step} steps`).join('<br>') : 'No Sensors added'}</div>
                     <div class='card'><div><strong>Light Sensitivity</strong> ${threshold}</div></div>
-                    <div class='card'><div><strong>Schedules</strong></div>${schedules.length ? schedules.map(s => `${s.time} → ${s.motor === '1' ? 'Sunshade' : 'Blackout'}, Sensor ${s.level}`).join('<br>') : 'No schedules added'}</div>`;
+                    <div class='card'><div><strong>Schedules</strong></div>${schedules.length ? schedules.map(s => `${s.time} → ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'}, Sensor ${s.level}`).join('<br>') : 'No schedules added'}</div>`;
 
                 saveBtn.addEventListener('click', async () => {
                     const settings = makeSettingsPayload();
-                    const readableSchedules = schedules.map(s => ({ time: s.time, motor: s.motor === '1' ? 'sunshade' : 'blackout', level: s.level }));
-                    const ok = await save(settings, readableSchedules);
+                    const ok = await save(settings, schedules);
                     if (ok)
                     {
                         saveMsg.textContent = '✅ Configuration saved successfully! Returning to main menu...';
