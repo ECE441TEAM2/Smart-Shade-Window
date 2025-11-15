@@ -385,6 +385,7 @@ def api_save():
             with open(SCHEDULE_FILE, "w") as f:
                 json.dump(data.get("schedules"), f, indent=4)
             logging.info("api_save: Schedule saved from webapp.")
+            return jsonify({"status": "ok"})
         except Exception as e:
             logging.error(f"api_save: Schedule save failed: {e}")
             return jsonify({"status": "error", "message": str(e)}), 500
