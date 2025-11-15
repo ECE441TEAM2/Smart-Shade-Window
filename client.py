@@ -344,6 +344,14 @@ def api_save():
         logging.error(f"Save failed: {e}")
         return jsonify({"status": "error", "message": str(e)})
 
+@app.route("/api/zero_step", methods=["POST"])
+def api_zero_step():
+    """Service webapp request to set the current step position to zero."""
+    global step
+    step = 0
+    logging.debug("Current step position set to zero via webapp.")
+    return jsonify({"status": "ok", "current_step": step})
+
 @app.route("/api/status", methods=["GET"])
 def api_status():
     """Service webapp request to return current app status."""

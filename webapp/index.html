@@ -248,7 +248,7 @@
                 <!-- Save -->
                 <div class="card">
                     <h2>Configuration</h2>
-                    <button class="btn primary" onclick="savePanelConfig()"><span class="icon">save</span>Save to Pi</button>
+                    <button class="btn primary" onclick="savePanelConfig()"><span class="icon">save</span>Save Settings</button>
                     <div id="panelSaveMsg" class="statusline"></div>
                 </div>
             </div>
@@ -337,7 +337,7 @@
         let motorSteps = { 1: 0, 2: 0 };
         let sensorSteps = [];            // [{step:number}]
         let schedules = [];              // [{time, motor:'1'|'2', level:'1'..}]
-        let threshold = 5;
+        let threshold = 2500;
         let light = 48;                  // demo for UI only
 
         const config =
@@ -559,7 +559,7 @@
         /**
         * Send an API call to instruct the client to save the active settings and schedules.
         */
-        async function saveToPi(settings, schedulesPayload)
+        async function save(settings, schedulesPayload)
         {
             const res = await fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ settings, schedules: schedulesPayload }) });
             return res.ok;
@@ -571,9 +571,9 @@
         async function savePanelConfig()
         {
             const settings = { motors: config.motors.map(v => (v ?? 0)), sensor_steps: sensorSteps.map(s => s.step), threshold };
-            const ok = await saveToPi(settings, schedules);
+            const ok = await save(settings, schedules);
             const msg = qs('panelSaveMsg');
-            msg.textContent = ok ? '✅ Configuration saved to Raspberry Pi.' : '❌ Failed to save configuration.';
+            msg.textContent = ok ? '✅ Configuration saved successfully! Returning to main menu...' : '❌ Failed to save configuration.';
             setTimeout(() => (msg.textContent = ''), 3500);
             if (statusState.mode === 'schedule') paintScheduleList();
         }
@@ -619,20 +619,20 @@
         });
         qs('mSave').addEventListener('click', async () => {
             const settings = { motors: config.motors.map(v => (v ?? 0)), sensor_steps: sensorSteps.map(s => s.step), threshold };
-            const ok = await saveToPi(settings, schedules);
+            const ok = await save(settings, schedules);
             if (ok) hide(qs('schedModal'));
             paintScheduleList();
         });
 
-        /* ------------------------------------------------------------------
-         * Setup Wizard (ported + adapted)
-         * ------------------------------------------------------------------ */
+        /**
+        * Strings for the setup wizard to use.
+        */
         const steps =
         [
             {
                 title: 'Smart Shade Setup',
-                subtitle: 'Welcome',
-                body: `This wizard will guide you in setting up the configuration for your Smart Shade.<br><br>Before continuing, please ensure all light sensors you want to use are plugged into the device.<br>Use the arrow below when you are ready to proceed.`,
+                subtitle: 'Welcome!',
+                body: `This wizard will guide you in setting up the configuration for your Smart Shade.<br>Be careful while configuring these settings, as it will not be possible to redo any steps without restarting the setup process.<br><br>Before continuing, please ensure all light sensors you want to use are plugged into the device.<br><br>Use the arrow below when you are ready to proceed.`,
                 renderExtras: () => ''
             },
             {
@@ -643,8 +643,7 @@
                     <div class=\"row\" style=\"justify-content:center; gap:1rem; margin-top:0.6rem;\">
                     <button id=\"wUp1\" class=\"btn\"><span class=\"icon\">north</span>Up</button>
                     <button id=\"wDown1\" class=\"btn\"><span class=\"icon\">south</span>Down</button>
-                    </div>
-                    <div class=\"statusline\" style=\"text-align:center; margin-top:0.3rem;\">Current: <strong id=\"motorStep1\">${motorSteps[1]}</strong> steps</div>`, motor: 1
+                    </div>`, motor: 1
             },
             {
                 title: 'Smart Shade Setup',
@@ -654,20 +653,19 @@
                     <div class=\"row\" style=\"justify-content:center; gap:1rem; margin-top:0.6rem;\">
                     <button id=\"wUp2\" class=\"btn\"><span class=\"icon\">north</span>Up</button>
                     <button id=\"wDown2\" class=\"btn\"><span class=\"icon\">south</span>Down</button>
-                    </div>
-                    <div class=\"statusline\" style=\"text-align:center; margin-top:0.3rem;\">Current: <strong id=\"motorStep2\">${motorSteps[2]}</strong> steps</div>`, motor: 2
+                    </div>`, motor: 2
             },
             {
                 title: 'Smart Shade Setup',
                 subtitle: 'Sensor Positions',
-                body: `Move the sunshade and tap “Add Sensor” to store a sensor position.`,
+                body: `Place your light sensors on the window frame.<br>You may space them however you like, but please ensure they are placed in order of port: port 0 should be the bottommost sensor, port 1 should be the next highest, and so on.<br><br>Once the sensors are in place, use the controls below to line the blind up with each sensor's position, starting from the bottommost sensor.<br>Once the blind is level with a sensor, use the 'Add Sensor' button to save that sensor's position.<br><br>Continue once the positions of all sensors have been saved.`,
                 renderExtras: () => `
                     <div class=\"card\" style=\"margin-top:0.4rem;\">
                     <div class=\"row space\">
                     <div><b>Sunshade step</b>: <span id=\"motorStep1b\">${motorSteps[1]}</span></div>
                     <div class=\"row\">
-                    <button id=\"wUp1b\" class=\"btn\"><span class=\"icon\">north</span></button>
-                    <button id=\"wDown1b\" class=\"btn\"><span class=\"icon\">south</span></button>
+                    <button id=\"wUp3\" class=\"btn\"><span class=\"icon\">north</span></button>
+                    <button id=\"wDown3\" class=\"btn\"><span class=\"icon\">south</span></button>
                     </div>
                     </div>
                     <div class=\"row\" style=\"justify-content:center; margin-top:0.5rem;\">
@@ -678,18 +676,18 @@
             },
             {
                 title: 'Smart Shade Setup',
-                subtitle: 'Light Sensor Threshold',
-                body: `Adjust the light sensor threshold according to your needs.<br><br>Light Sensor currently reads: <b>${parseInt((light / 120) * 100)}%</b>`,
+                subtitle: 'Light Sensitivity',
+                body: `You may adjust the sensitivity of the light sensors if you are in an overcast or particularly bright area.<br><br>If you are unsure, <b>2500</b> is generally a good amount.<br><br>The highest light level currently being read is <b>${light}</b>.`,
                 renderExtras: () => `
                     <div class=\"card\">
-                    <div style=\"font-size:1.4rem; font-weight:700; text-align:center;\" id=\"thresholdValue\">${threshold}%</div>
-                    <input type=\"range\" id=\"thresholdSlider\" min=\"0\" max=\"100\" value=\"${threshold}\">
+                    <div style=\"font-size:1.4rem; font-weight:700; text-align:center;\" id=\"thresholdValue\">${threshold}</div>
+                    <input type=\"range\" id=\"thresholdSlider\" min=\"0\" max=\"10000\" step=\"250\" value=\"${threshold}\">
                     </div>`, threshold: true
             },
             {
-                title: 'Schedules',
-                subtitle: 'Automation Setup',
-                body: 'Add an optional schedule for your Smart Shades',
+                title: 'Smart Shade Setup',
+                subtitle: '(Optional) Schedule Configuration',
+                body: 'You may schedule actions for the shade to take automatically when it is in Schedule Mode.<br>This can be completed or added to at a later time.',
                 renderExtras: () => `
                     <div class=\"card\">
                     <div class=\"row\" style=\"gap:0.5rem; flex-wrap:wrap;\">
@@ -702,9 +700,9 @@
                     </div>`, schedules: true
             },
             {
-                title: 'Summary',
+                title: 'Smart Shade Setup',
                 subtitle: 'Review & Save',
-                body: 'Review setup, then press “Save Configuration.”',
+                body: 'Setup is now complete.<br>Review the settings below and press “Save Configuration” to apply them.<br><br>If any errors have been made, please repeat the setup process.',
                 renderExtras: () => `
                     <div id=\"summaryBox\" class=\"summary-box\" style=\"margin-top:0.5rem;\"></div>
                     <div class=\"row\" style=\"justify-content:center; margin-top:0.6rem;\">
@@ -714,26 +712,47 @@
             },
         ];
 
+        /**
+        * Renders the current step of the setup wizard.
+        */
         function renderStep()
         {
+            // Purpose: Render the current wizard step into the DOM.
+            // - `currentStep` indexes the `steps` array.
+            // - This function rebuilds the wizard content each time it is called
+            //   and wires up the interactive controls for that step.
             const root = qs('wizardRoot'); const s = steps[currentStep];
+
+            // Insert the card HTML for the current step (title, subtitle, body, extras)
             root.innerHTML = `<div class="card"><h2>${s.title}</h2><div class="statusline"><strong>${s.subtitle}</strong></div><p style="margin-top:0.3rem;">${s.body}</p>${s.renderExtras ? s.renderExtras() : ''}</div>`;
 
             qs('prevBtn').style.visibility = currentStep === 0 ? 'hidden' : 'visible';
             qs('nextBtn').style.visibility = currentStep === steps.length - 1 ? 'hidden' : 'visible';
 
             // Holdable buttons in wizard
-            const hookHold = (id, delta, motor) => { const b = qs(id); if (!b) return; makeRepeatable(b, () => changeStep(delta, motor)); };
+            // hookHold attaches makeRepeatable to buttons so pressing & holding repeatedly
+            // invokes the changeStep(delta, motor) function.
+            const hookHold = (id, delta, motor) => {
+                const b = qs(id);
+                if (!b) return;
+                makeRepeatable(b, () => changeStep(delta, motor));
+            };
             hookHold('wUp1', -10, 1); hookHold('wDown1', 10, 1);
             hookHold('wUp2', -10, 2); hookHold('wDown2', 10, 2);
-            hookHold('wUp1b', -10, 1); hookHold('wDown1b', 10, 1);
+            hookHold('wUp3', -10, 1); hookHold('wDown3', 10, 1);
 
+            // If this step is tied to a specific motor, ensure that motor is selected
+            // in the physical device so user controls affect the expected blind.
             if (s.motor)
             {
                 ensureCorrectBlind(s.motor);
             }
 
-            // Sensor steps
+            // Sensor steps block:
+            // - Render "Add Sensor" UI and list of saved sensor positions.
+            // - `paint()` regenerates the sensor list and wires delete handlers.
+            // - Clicking Add stores the current sunshade motor step as a sensor position.
+            // - ensureSunshadeActive() attempts to make the sunshade active before painting the list.
             if (s.sensor_steps)
             {
                 const addBtn = qs('addSensorBtn'); const list = qs('sensorList');
@@ -742,7 +761,11 @@
                     list.innerHTML = sensorSteps.map((l, i) => `<div class='list-item'><div><strong>Sensor ${i + 1}</strong>: ${l.step} steps</div><button class='delete' data-index='${i}'><span class='icon'>delete</span></button></div>`).join('');
                     list.querySelectorAll('.delete').forEach(btn => btn.addEventListener('click', () => { const idx = Number(btn.getAttribute('data-index')); sensorSteps.splice(idx, 1); paint(); }));
                 }
-                addBtn.addEventListener('click', () => { sensorSteps.push({ step: motorSteps[1] }); paint(); }); paint();
+                addBtn.addEventListener('click', () => {
+                    sensorSteps.push({ step: motorSteps[1] });
+                    paint();
+                });
+                paint();
                 // Ensure Sunshade is active BEFORE first render of this step
                 (async () => {
                     await ensureSunshadeActive();  // uses /api/swap_dumb under the hood
@@ -750,14 +773,20 @@
                 })();
             }
 
-            // Threshold slider
+            // Threshold slider:
+            // - If the step exposes a threshold slider, wire up input events to update the
+            //   `threshold` variable and update the displayed value in realtime.
             if (s.threshold)
             {
                 const slider = qs('thresholdSlider'); const val = qs('thresholdValue');
                 slider.addEventListener('input', () => { threshold = parseInt(slider.value, 10); val.textContent = `${threshold}%`; });
             }
 
-            // Schedules builder
+            // Schedules builder:
+            // - Render inputs for schedule time, motor selection, sensor/level.
+            // - fillLevelOptions populates available sensor levels (depends on sensorSteps).
+            // - paintSchedules shows existing schedules and wires delete buttons.
+            // - addBtn adds a schedule object into the `schedules` array and repaints.
             if (s.schedules)
             {
                 const timeInput = qs('scheduleTime'); const motorSelect = qs('scheduleMotor'); const levelSelect = qs('scheduleLevel'); const addBtn = qs('addScheduleBtn'); const list = qs('scheduleList');
@@ -771,7 +800,11 @@
                 fillLevelOptions(); paintSchedules();
             }
 
-            // Summary + save
+            // Summary + save:
+            // - When the summary step is active, build a human readable summary of
+            //   calibration values, levels, threshold and schedules.
+            // - Wire the save button to call saveToPi which persists configuration
+            //   and then attempts to switch back to manual mode on success.
             if (s.summary)
             {
                 const box = qs('summaryBox'); const saveBtn = qs('saveBtn'); const saveMsg = qs('saveNotice');
@@ -785,11 +818,22 @@
                 saveBtn.addEventListener('click', async () => {
                     const settings = { motors: [motor1StepsFinal, motor2StepsFinal], sensor_steps: sensorSteps.map(s => s.step), threshold };
                     const readableSchedules = schedules.map(s => ({ time: s.time, motor: s.motor === '1' ? 'sunshade' : 'blackout', level: s.level }));
-                    const ok = await saveToPi(settings, readableSchedules);
-                    if (ok) {
-                        saveMsg.textContent = '✅ Configuration saved to Raspberry Pi. Switching to manual mode...';
-                        try { await fetch('/api/mode', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'manual' }) }); statusState.mode = 'manual'; setTimeout(() => { showPanel(); }, 1200); } catch (e) { console.error('Failed to switch to manual mode:', e); }
-                    } else { saveMsg.textContent = '❌ Failed to save configuration.'; }
+                    const ok = await save(settings, readableSchedules);
+                    if (ok)
+                    {
+                        saveMsg.textContent = '✅ Configuration saved successfully! Returning to main menu...';
+                        try
+                        {
+                            await fetch('/api/mode', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'manual' }) });
+                            statusState.mode = 'manual';
+                            setTimeout(() => { showPanel(); }, 1200);
+                        }
+                        catch (e)
+                        {
+                            console.error('Failed to switch to manual mode:', e);
+                        }
+                    }
+                    else { saveMsg.textContent = '❌ Failed to save configuration.'; }
                     setTimeout(() => (saveMsg.textContent = ''), 4000);
                 });
             }
@@ -804,7 +848,7 @@
 
         function moveDuringSetup(direction)
         {
-            fetch('/api/move', {
+            fetch('/api/move_unsafe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ direction, steps: 10 })
@@ -849,9 +893,29 @@
 
         // Wizard nav
         qs('prevBtn').addEventListener('click', () => { if (currentStep > 0) currentStep--; renderStep(); });
-        qs('nextBtn').addEventListener('click', () => {
+        qs('nextBtn').addEventListener('click', async () => {
             if (currentStep === 1) { config.motors[0] = motorSteps[1]; motorSteps[1] = 0; }
-            if (currentStep === 2) { config.motors[1] = motorSteps[2]; motorSteps[2] = 0; }
+            if (currentStep === 2)
+            {
+                config.motors[1] = motorSteps[2];
+                motorSteps[2] = 0;
+                try {
+                    const res = await fetch('/api/zero_step', { method: 'POST' });
+                    const payload = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                        console.error('zero_step returned error', payload);
+                    } else {
+                        // backend uses a single shared step counter — update UI only after server confirms
+                        motorSteps[1] = 0;
+                        motorSteps[2] = 0;
+                        console.debug('Motors zeroed on server:', payload);
+                    }
+                } catch (e) {
+                    console.error('Failed to call /api/zero_step:', e);
+                    // leave local values intact so user can retry or inspect
+                }
+            }
+
             if (currentStep < steps.length - 1) currentStep++; renderStep();
         });
 
