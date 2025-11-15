@@ -9,6 +9,7 @@
     "op_mode": "schedule",
     "active_shade": "blackout",
     "step": 150,
+    "threshold": 2500,
     "sensor_steps": [
         1000,
         800,

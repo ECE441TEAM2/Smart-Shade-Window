@@ -344,13 +344,27 @@
         {
             motors: [null, null],
             sensor_steps: [],
-            threshold: 5
+            threshold: 2500
         };
 
         // Snappy helper functions to simplify code a bit
         function qs(id) { return document.getElementById(id); }
         function show(el) { el.classList.remove('hidden'); }
         function hide(el) { el.classList.add('hidden'); }
+
+        /**
+        * Builds a JSON of the active settings, to be sent to the client.
+        */
+        function makeSettingsPayload()
+        {
+            return {
+                op_mode: statusState.mode,
+                active_shade: statusState.active_shade,
+                step: statusState.step,
+                threshold: threshold,
+                sensor_steps: sensorSteps.map(s => s.step)
+            };
+        }
 
         /** 
         * Transforms the given button into a repeatable button (hold to repeat).
@@ -570,7 +584,7 @@
         */
         async function savePanelConfig()
         {
-            const settings = { motors: config.motors.map(v => (v ?? 0)), sensor_steps: sensorSteps.map(s => s.step), threshold };
+            const settings = makeSettingsPayload();
             const ok = await save(settings, schedules);
             const msg = qs('panelSaveMsg');
             msg.textContent = ok ? '✅ Configuration saved successfully! Returning to main menu...' : '❌ Failed to save configuration.';
@@ -590,7 +604,7 @@
         qs('confirmSetup').addEventListener('click', async () => {
             hide(qs('confirmModal'));
             // Optionally clear local UI state – backend will wipe authoritative config
-            motorSteps = { 1: 0, 2: 0 }; sensorSteps = []; schedules = []; threshold = 5; config.motors = [null, null];
+            motorSteps = { 1: 0, 2: 0 }; sensorSteps = []; schedules = []; threshold = 2500; config.motors = [null, null];
             await setMode('setup');
         });
 
@@ -618,7 +632,7 @@
             if (!t || !m || !l) return; schedules.push({ time: t, motor: m, level: l }); qs('mTime').value = ''; paintSchedEditor(); paintScheduleList();
         });
         qs('mSave').addEventListener('click', async () => {
-            const settings = { motors: config.motors.map(v => (v ?? 0)), sensor_steps: sensorSteps.map(s => s.step), threshold };
+            const settings = makeSettingsPayload();
             const ok = await save(settings, schedules);
             if (ok) hide(qs('schedModal'));
             paintScheduleList();
@@ -779,7 +793,7 @@
             if (s.threshold)
             {
                 const slider = qs('thresholdSlider'); const val = qs('thresholdValue');
-                slider.addEventListener('input', () => { threshold = parseInt(slider.value, 10); val.textContent = `${threshold}%`; });
+                slider.addEventListener('input', () => { threshold = parseInt(slider.value, 10); val.textContent = `${threshold}`; });
             }
 
             // Schedules builder:
@@ -812,11 +826,11 @@
                 box.innerHTML = `
                     <div class='card'><div><strong>Calibration</strong></div><div>Sunshade: ${motor1StepsFinal} → 0 steps</div><div>Blackout: ${motor2StepsFinal} → 0 steps</div></div>
                     <div class='card'><div><strong>Levels</strong></div>${sensorSteps.length ? sensorSteps.map((l, i) => `Sensor ${i + 1}: ${l.step} steps`).join('<br>') : 'No Sensors added'}</div>
-                    <div class='card'><div><strong>Light Threshold</strong> ${threshold}%</div></div>
+                    <div class='card'><div><strong>Light Sensitivity</strong> ${threshold}</div></div>
                     <div class='card'><div><strong>Schedules</strong></div>${schedules.length ? schedules.map(s => `${s.time} → ${s.motor === '1' ? 'Sunshade' : 'Blackout'}, Sensor ${s.level}`).join('<br>') : 'No schedules added'}</div>`;
 
                 saveBtn.addEventListener('click', async () => {
-                    const settings = { motors: [motor1StepsFinal, motor2StepsFinal], sensor_steps: sensorSteps.map(s => s.step), threshold };
+                    const settings = makeSettingsPayload();
                     const readableSchedules = schedules.map(s => ({ time: s.time, motor: s.motor === '1' ? 'sunshade' : 'blackout', level: s.level }));
                     const ok = await save(settings, readableSchedules);
                     if (ok)

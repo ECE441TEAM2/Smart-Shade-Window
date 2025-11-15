@@ -1,5 +1,6 @@
 # ECE 441 Fall 2025
 
+from re import I
 import time
 import board
 import adafruit_tca9548a
@@ -30,7 +31,7 @@ CHANNELS = 5 # do not change
 SETTINGS_FILE = "shade_settings.json"
 SCHEDULE_FILE = "shade_schedules.json"
 
-sunlight_threshold = 2500 # any lux reading over this number is considered "sunlight"
+threshold = 2500 # any lux reading over this number is considered "sunlight"
 sensor_array = [None] * CHANNELS # dummy sensor variables, the initial scan will propagate them
 op_mode = "auto" # auto, manual, schedule, or setup
 active_shade = "sunshade" # either "sunshade" or "blackout". stepper1 is the sunshade, stepper2 is the blackout
@@ -57,6 +58,7 @@ def save_settings():
         "op_mode": op_mode,
         "active_shade": active_shade,
         "step": step,
+        "threshold": threshold,
         "sensor_steps": sensor_steps
     }
     try:
@@ -69,7 +71,7 @@ def save_settings():
 def load_settings():
     """Loads settings from SETTINGS_FILE.
     If the file does not exist, or if the quantity or wiring of the sensors does not match previously configured settings, forces setup to run."""
-    global step, active_shade, op_mode, sensor_steps
+    global step, active_shade, op_mode, sensor_steps, threshold
 
     if not os.path.exists(SETTINGS_FILE):
         logging.info("Settings file not found. Launching setup.")
@@ -84,6 +86,7 @@ def load_settings():
         op_mode = settings["op_mode"]
         active_shade = settings["active_shade"]
         step = settings["step"]
+        threshold = settings["threshold"]
         # if there is a sensor mismatch, force setup to run
         if sum(1 for s in settings["sensor_mask"] if s is not None) != sum(1 for s in sensor_array if s is not None):
             logging.warning("Sensor mismatch detected. Launching setup.")
@@ -208,7 +211,7 @@ def automatic_mode():
     for i, lux in enumerate(read_sensors()):
         if lux is None:
             continue
-        if lux > sunlight_threshold:
+        if lux > threshold:
             logging.debug(f"automatic_mode: Sensor {i} detected sunlight ({lux} lux). Adjusting shade.")
             move_motor_to_step(sensor_steps[i])
             return
@@ -331,18 +334,54 @@ def api_sensors():
 
 @app.route("/api/save", methods=["POST"])
 def api_save():
-    """Service webapp request to save configuration files."""
-    data = request.json
+    """Service webapp request to receive and save configuration files.
+    Receives a packet containing JSONs for both the settings and schedules; the call merges the received data into the
+    settings in memory, then calls save_settings() to write them to SETTINGS_FILE.
+    Schedule data is dumped straight to SCHEDULE_FILE."""
+    data = request.json or {}
+    #incoming = data.get("settings", {}) or {}
+    #schedules_payload = data.get("schedules", [])
+
+    # DEBUG: dump the entire received payload
     try:
-        with open(SETTINGS_FILE, "w") as f:
-            json.dump(data.get("settings"), f, indent=4)
-        with open(SCHEDULE_FILE, "w") as f:
-            json.dump(data.get("schedules"), f, indent=4)
-        logging.info("Config and schedules saved from webapp.")
-        return jsonify({"status": "ok"})
+        with open("DEBUG_DUMP.json", "w") as f:
+            json.dump(data, f, indent=4)
     except Exception as e:
-        logging.error(f"Save failed: {e}")
-        return jsonify({"status": "error", "message": str(e)})
+        logging.error(f"DEBUG DUMP FAILED: {e}")
+
+    return jsonify({"status": "ok"})
+    '''
+    try:
+        global op_mode, active_shade, step, threshold, sensor_steps
+        if "op_mode" in incoming:
+            op_mode = incoming["op_mode"]
+        if "active_shade" in incoming:
+            active_shade = incoming["active_shade"]
+        if "step" in incoming:
+            try:
+                step = int(incoming["step"])
+            except (TypeError, ValueError):
+                logging.error(f"api_save: Invalid step value received: {incoming['step']}")
+        if "threshold" in incoming:
+            try:
+                threshold = int(incoming["threshold"])
+            except (TypeError, ValueError):
+                logging.warning(f"api_save: Invalid threshold received: {incoming['threshold']}")
+        incoming_sensor_steps = incoming.get("sensor_steps")
+        if incoming_sensor_steps and isinstance(incoming_sensor_steps, list):
+
+        try:
+            with open(SCHEDULE_FILE, "w") as f:
+                json.dump(data.get("schedules"), f, indent=4)
+            logging.info("api_save: Schedule saved from webapp.")
+        except Exception as e:
+            logging.error(f"api_save: Schedule save failed: {e}")
+            return jsonify({"status": "error", "message": str(e)}), 500
+
+    except Exception as e:
+        logging.error(f"api_save: Save failed: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+    '''
 
 @app.route("/api/zero_step", methods=["POST"])
 def api_zero_step():
