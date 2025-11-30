@@ -509,6 +509,9 @@
         */
         async function setMode(mode)
         {
+            // When explicitly requesting setup, always reset the wizard to the first page.
+            if (mode === 'setup') currentStep = 0;
+
             await fetch('/api/mode', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode }) });
             await updateStatus();
             if (statusState.mode === 'setup') showWizard(); else showPanel();
@@ -609,6 +612,8 @@
             hide(qs('confirmModal'));
             // Optionally clear local UI state – backend will wipe authoritative config
             motorSteps = { 1: 0, 2: 0 }; sensorSteps = []; schedules = []; threshold = 2500; config.motors = [null, null];
+            // Ensure wizard will start on first page when setup is entered
+            currentStep = 0;
             await setMode('setup');
         });
 
