@@ -1,6 +1,5 @@
 # ECE 441 Fall 2025
 
-from re import I
 import time
 import board
 import adafruit_tca9548a
@@ -332,6 +331,16 @@ def api_swap_dumb():
 def api_sensors():
     """Service webapp request to return current sensor readings."""
     return jsonify({"readings": read_sensors()})
+
+@app.route("/api/sensor_mask", methods=["GET"])
+def api_sensor_mask():
+    """Service webapp request to return the sensor mask."""
+    try:
+        mask = sensor_mask_helper()
+        return jsonify({"sensor_mask": mask})
+    except Exception as e:
+        logging.error(f"api_sensor_mask: Failed to produce sensor mask: {e}")
+        return jsonify({"sensor_mask": []}), 500
 
 @app.route("/api/save", methods=["POST"])
 def api_save():

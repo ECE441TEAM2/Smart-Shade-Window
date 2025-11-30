@@ -256,7 +256,7 @@
                 <div class="col">
                     <button class="btn" id="enterSetupBtn"><span class="icon">build</span>Enter Setup</button>
                     <button class="btn" id="configSchedulesBtn"><span class="icon">event</span>Configure Schedules</button>
-                    <button class="btn primary" id="saveSettingsBtn" onclick="savePanelConfig()"><span class="icon">save</span>Save Settings</button>
+                    <button class="btn" id="saveSettingsBtn" onclick="savePanelConfig()"><span class="icon">save</span>Save Settings</button>
                     <button class="btn" id="closeSettings"><span class="icon">close</span>Close</button>
                     <div id="settingsSaveMsg" class="statusline"></div>
                 </div>
@@ -323,7 +323,9 @@
         let sensorSteps = [];            // [{step:number}]
         let schedules = [];              // [{time, motor:'sunshade'|'blackout', level:'1'..}]
         let threshold = 2500;
-        let light = 48;                  // demo for UI only
+
+        // New: presence mask received from client (1 == present, null == not present)
+        let sensorMask = [];
 
         const config =
         {
@@ -336,6 +338,37 @@
         function qs(id) { return document.getElementById(id); }
         function show(el) { el.classList.remove('hidden'); }
         function hide(el) { el.classList.add('hidden'); }
+
+        /**
+        * Fetch sensor mask from the client and store it in `sensorMask`.
+        * The client exposes the detected mask at /api/sensor_mask.
+        */
+        async function fetchSensorMask() {
+            try {
+                const res = await fetch('/api/sensor_mask');
+                if (!res.ok) { console.warn('fetchSensorMask: non-OK response'); sensorMask = []; return; }
+                const data = await res.json();
+                sensorMask = data.sensor_mask || [];
+                console.debug('fetchSensorMask: sensorMask =', sensorMask);
+                // If schedule editor is open, update level options with the new mask
+                const level = qs('mLevel');
+                if (level) {
+                    let opts = '';
+                    if (sensorMask.length) {
+                        for (let i = sensorMask.length; i >= 1; i--) {
+                            opts += `<option value='${i}'>Sensor ${i}</option>`;
+                        }
+                        level.innerHTML = opts;
+                    } else {
+                        level.innerHTML = `<option disabled>No Sensors detected</option>`;
+                    }
+                }
+            }
+            catch (e) {
+                console.error('fetchSensorMask failed:', e);
+                sensorMask = [];
+            }
+        }
 
         /**
         * Builds a JSON of the active settings, to be sent to the client.
