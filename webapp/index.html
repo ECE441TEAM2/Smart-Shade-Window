@@ -170,10 +170,6 @@
     .arrow-btn { background: none; border: none; cursor: pointer; }
     .arrow-btn .material-icons { font-size: 36px; color: var(--accent); }
 
-    /* Bottom control panel bar */
-    .tabbar { display: flex; gap: 0.5rem; padding: 0.6rem; border-top: 1px solid #eee; background: #fff; }
-    .tabbar .btn { flex: 1; justify-content: center; }
-
     .hidden { display: none !important; }
 
     /* Simple modal */
@@ -255,15 +251,9 @@
             </div>
         </div>
 
-        <!-- Wizard nav and Panel tabbar (shown/hidden dynamically) -->
+        <!-- Wizard nav (shown/hidden dynamically) -->
         <div id="wizardNav" class="nav hidden">
             <button class="arrow-btn" id="nextBtn"><span class="material-icons">arrow_forward_ios</span></button>
-        </div>
-
-        <div id="panelTabbar" class="tabbar hidden">
-            <button class="btn" onclick="updateStatus()"><span class="icon">refresh</span>Status</button>
-            <button class="btn" onclick="refreshSensors()"><span class="icon">sensors</span>Sensors</button>
-            <button class="btn" id="openSchedulesFromTab"><span class="icon">event</span>Schedules</button>
         </div>
 
         <!-- Settings modal (gear) -->
@@ -402,7 +392,6 @@
             show(qs('wizardRoot'));
             show(qs('wizardNav'));
             hide(qs('panelRoot'));
-            hide(qs('panelTabbar'));
             hide(qs('gearBtn'));
             qs('title').textContent = 'Smart Shade • Setup';
             // figure out what step of setup we are on and render that
@@ -444,7 +433,6 @@
             hide(qs('wizardRoot'));
             hide(qs('wizardNav'));
             show(qs('panelRoot'));
-            show(qs('panelTabbar'));
             show(qs('gearBtn'));
             qs('title').textContent = 'Smart Shade • Control';
             updateStatus().then(() => { paintPanelVisibility(); paintScheduleList(); });
@@ -647,7 +635,6 @@
         function openScheduleEditor() { paintSchedEditor(); show(qs('schedModal')); }
 
         qs('configSchedulesBtn').addEventListener('click', () => { hide(qs('settingsModal')); openScheduleEditor(); });
-        qs('openSchedulesFromTab').addEventListener('click', openScheduleEditor);
         qs('mClose').addEventListener('click', () => hide(qs('schedModal')));
         qs('mAdd').addEventListener('click', () => {
             const t = qs('mTime').value; const m = qs('mMotor').value; const l = qs('mLevel').value;
