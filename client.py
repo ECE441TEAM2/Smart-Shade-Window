@@ -28,7 +28,7 @@ motor_shield = MotorKit()
 # global variables
 CHANNELS = 5 # do not change
 SETTINGS_FILE = "shade_settings.json"
-SCHEDULE_FILE = "shade_schedules.json"
+SCHEDULE_FILE = "webapp/shade_schedules.json"
 
 threshold = 2500 # any lux reading over this number is considered "sunlight"
 sensor_array = [None] * CHANNELS # dummy sensor variables, the initial scan will propagate them

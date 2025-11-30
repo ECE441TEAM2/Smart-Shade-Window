@@ -494,7 +494,7 @@
         {
             try
             {
-                const res = await fetch('/shade_schedules.json', { cache: "no-store" });
+                const res = await fetch('shade_schedules.json', { cache: "no-store" });
                 if (!res.ok)
                 {
                     // file not present or 404 -> keep existing schedules array empty
