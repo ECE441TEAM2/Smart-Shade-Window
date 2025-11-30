@@ -257,7 +257,6 @@
 
         <!-- Wizard nav and Panel tabbar (shown/hidden dynamically) -->
         <div id="wizardNav" class="nav hidden">
-            <button class="arrow-btn" id="prevBtn"><span class="material-icons">arrow_back_ios</span></button>
             <button class="arrow-btn" id="nextBtn"><span class="material-icons">arrow_forward_ios</span></button>
         </div>
 
@@ -404,6 +403,7 @@
             show(qs('wizardNav'));
             hide(qs('panelRoot'));
             hide(qs('panelTabbar'));
+            hide(qs('gearBtn'));
             qs('title').textContent = 'Smart Shade • Setup';
             // figure out what step of setup we are on and render that
             renderStep();
@@ -445,6 +445,7 @@
             hide(qs('wizardNav'));
             show(qs('panelRoot'));
             show(qs('panelTabbar'));
+            show(qs('gearBtn'));
             qs('title').textContent = 'Smart Shade • Control';
             updateStatus().then(() => { paintPanelVisibility(); paintScheduleList(); });
             refreshSensors();
@@ -745,7 +746,6 @@
             // Insert the card HTML for the current step (title, subtitle, body, extras)
             root.innerHTML = `<div class="card"><h2>${s.title}</h2><div class="statusline"><strong>${s.subtitle}</strong></div><p style="margin-top:0.3rem;">${s.body}</p>${s.renderExtras ? s.renderExtras() : ''}</div>`;
 
-            qs('prevBtn').style.visibility = currentStep === 0 ? 'hidden' : 'visible';
             qs('nextBtn').style.visibility = currentStep === steps.length - 1 ? 'hidden' : 'visible';
 
             // Holdable buttons in wizard
@@ -910,7 +910,6 @@
         }
 
         // Wizard nav
-        qs('prevBtn').addEventListener('click', () => { if (currentStep > 0) currentStep--; renderStep(); });
         qs('nextBtn').addEventListener('click', async () => {
             if (currentStep === 1) { config.motors[0] = motorSteps[1]; motorSteps[1] = 0; }
             if (currentStep === 2)
