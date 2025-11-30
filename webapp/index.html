@@ -241,13 +241,6 @@
                     <h2>Active Schedules</h2>
                     <div id="activeScheduleList" class="list">No schedules configured.</div>
                 </div>
-
-                <!-- Save -->
-                <div class="card">
-                    <h2>Configuration</h2>
-                    <button class="btn primary" onclick="savePanelConfig()"><span class="icon">save</span>Save Settings</button>
-                    <div id="panelSaveMsg" class="statusline"></div>
-                </div>
             </div>
         </div>
 
@@ -263,7 +256,9 @@
                 <div class="col">
                     <button class="btn" id="enterSetupBtn"><span class="icon">build</span>Enter Setup</button>
                     <button class="btn" id="configSchedulesBtn"><span class="icon">event</span>Configure Schedules</button>
+                    <button class="btn primary" id="saveSettingsBtn" onclick="savePanelConfig()"><span class="icon">save</span>Save Settings</button>
                     <button class="btn" id="closeSettings"><span class="icon">close</span>Close</button>
+                    <div id="settingsSaveMsg" class="statusline"></div>
                 </div>
             </div>
         </div>
@@ -581,9 +576,9 @@
         {
             const settings = makeSettingsPayload();
             const ok = await save(settings, schedules);
-            const msg = qs('panelSaveMsg');
-            msg.textContent = ok ? '✅ Configuration saved successfully! Returning to main menu...' : '❌ Failed to save configuration.';
-            setTimeout(() => (msg.textContent = ''), 3500);
+            const msg = qs('settingsSaveMsg');
+            if (msg) msg.textContent = ok ? '? Configuration saved successfully! Returning to main menu...' : '? Failed to save configuration.';
+            setTimeout(() => { if (msg) msg.textContent = ''; }, 3500);
             if (statusState.mode === 'schedule') paintScheduleList();
         }
 
