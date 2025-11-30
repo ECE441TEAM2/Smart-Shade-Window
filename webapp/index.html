@@ -188,7 +188,7 @@
              background: #fff;
          }
 
-        /* Default list size kept small; sensor-specific lists enlarged below */
+         /* Default list size kept small; sensor-specific lists enlarged below */
          .list {
              max-height: 180px;
              overflow-y: auto;
@@ -403,6 +403,7 @@
                         <button id="mAdd" class="btn"><span class="icon">add</span></button>
                     </div>
                     <div id="mList" class="list" style="margin-top:0.5rem;"></div>
+                    <div id="mMsg" class="statusline" style="margin-top:0.4rem;"></div>
                 </div>
                 <div class="row">
                     <button class="btn" id="mClose"><span class="icon">close</span>Close</button>
@@ -437,7 +438,7 @@
         let schedules = [];              // [{time, motor:'sunshade'|'blackout', level:'0'.. or 5}]
         let threshold = 2500;
 
-        // New: presence mask received from client (1 == present, null == not present)
+        // presence mask received from client (1 == present, null == not present)
         let sensorMask = [];
 
         const config =
@@ -452,12 +453,22 @@
         function show(el) { el.classList.remove('hidden'); }
         function hide(el) { el.classList.add('hidden'); }
 
+        // Small helper to show a temporary message in the UI (falls back to alert)
+        function showTempMessage(el, text, isError = true)
+        {
+            if (!el) { alert(text); return; }
+            el.textContent = text;
+            el.style.color = isError ? 'var(--danger)' : 'green';
+            setTimeout(() => { if (el) el.textContent = ''; }, 3000);
+        }
+
         /**
         * Return an array of physical indices for sensors that are present (0-based),
         * e.g. [0,2,4] for sensors 1,3,5 plugged in.
         * If sensorMask is empty, return null so callers can fallback to other heuristics.
         */
-        function getPresentSensorIndices() {
+        function getPresentSensorIndices()
+        {
             if (!sensorMask || !sensorMask.length) return null;
             const out = [];
             for (let i = 0; i < sensorMask.length; i++) {
@@ -471,18 +482,51 @@
         * - if '5' => "Top"
         * - else treat as physical index (0-based) and display "Sensor {index+1}"
         */
-        function formatLevelDisplay(level) {
+        function formatLevelDisplay(level)
+        {
             const n = Number(level);
             if (!Number.isFinite(n)) return 'Unknown';
             if (n === 5) return 'Top';
             return `Sensor ${n + 1}`;
         }
 
+        async function loadSchedulesFile()
+        {
+            try
+            {
+                const res = await fetch('/shade_schedules.json', { cache: "no-store" });
+                if (!res.ok)
+                {
+                    // file not present or 404 -> keep existing schedules array empty
+                    schedules = [];
+                    console.debug('loadSchedulesFile: schedules file not found; schedules cleared');
+                    return;
+                }
+                const data = await res.json();
+                if (Array.isArray(data))
+                {
+                    schedules = data;
+                    console.debug('loadSchedulesFile: schedules loaded', schedules);
+                }
+                else
+                {
+                    schedules = [];
+                    console.warn('loadSchedulesFile: schedules file had unexpected shape; cleared');
+                }
+            }
+            catch (err)
+            {
+                schedules = [];
+                console.warn('loadSchedulesFile failed:', err);
+            }
+        }
+
         /**
          * Update state of the wizard nav (next button), the Add Sensor button
          * and the inline progress hint when on the sensor configuration step.
          */
-        function updateSensorStepNavState() {
+        function updateSensorStepNavState()
+        {
             const present = getPresentSensorIndices();
             const addBtn = qs('addSensorBtn');
             const nextBtn = qs('nextBtn');
@@ -517,7 +561,8 @@
         * Fetch sensor mask from the client and store it in `sensorMask`.
         * The client exposes the detected mask at /api/sensor_mask.
         */
-        async function fetchSensorMask() {
+        async function fetchSensorMask()
+        {
             try {
                 const res = await fetch('/api/sensor_mask');
                 if (!res.ok) { console.warn('fetchSensorMask: non-OK response'); sensorMask = []; return; }
@@ -533,7 +578,8 @@
             }
         }
 
-        function updateScheduleLevelOptionsIfOpen() {
+        function updateScheduleLevelOptionsIfOpen()
+        {
             const level = qs('mLevel');
             const wizardLevel = qs('scheduleLevel');
             const present = getPresentSensorIndices();
@@ -570,8 +616,10 @@
         * Builds a JSON of the active settings, to be sent to the client.
         * sensor_steps is sent as an array of step counts in the same order as present sensors.
         */
-        function makeSettingsPayload() {
-            return {
+        function makeSettingsPayload()
+        {
+            return
+            {
                 op_mode: statusState.mode,
                 active_shade: statusState.active_shade,
                 step: statusState.step,
@@ -584,7 +632,8 @@
         * Transforms the given button into a repeatable button (hold to repeat).
         * Useful for manual controls.
         */
-        function makeRepeatable(button, onTick, interval = 140) {
+        function makeRepeatable(button, onTick, interval = 140)
+        {
             let t = null;
             // listen for the button to begin being touched (see below for the event listener)
             const start = (e) => {
@@ -608,7 +657,8 @@
         /**
         * Transition to the setup wizard, hiding the main interface if it is active.
         */
-        function showWizard() {
+        function showWizard()
+        {
             show(qs('wizardRoot'));
             show(qs('wizardNav'));
             hide(qs('panelRoot'));
@@ -869,6 +919,10 @@
                 level.innerHTML = `<option disabled>No Sensors added</option>`;
             }
 
+            // clear any previous message
+            const mMsg = qs('mMsg');
+            if (mMsg) mMsg.textContent = '';
+
             const list = qs('mList');
             list.innerHTML = schedules.length ? schedules.map((s, i) => `
                     <div class='list-item'>
@@ -878,13 +932,24 @@
             list.querySelectorAll('.delete').forEach(b => b.addEventListener('click', () => { const i = +b.getAttribute('data-i'); schedules.splice(i, 1); paintSchedEditor(); }));
         }
 
-        function openScheduleEditor() { fetchSensorMask().then(() => { paintSchedEditor(); show(qs('schedModal')); }); }
+        async function openScheduleEditor()
+        {
+            await fetchSensorMask();
+            await loadSchedulesFile();
+            paintSchedEditor();
+            show(qs('schedModal'));
+        }
 
         qs('configSchedulesBtn').addEventListener('click', () => { hide(qs('settingsModal')); openScheduleEditor(); });
         qs('mClose').addEventListener('click', () => hide(qs('schedModal')));
         qs('mAdd').addEventListener('click', () => {
             const t = qs('mTime').value; const m = qs('mMotor').value; const l = qs('mLevel').value;
             if (!t || !m || !l) return;
+            // Prevent duplicate times (any schedule already at this exact time)
+            if (schedules.some(s => s.time === t)) {
+                showTempMessage(qs('mMsg'), `A schedule already exists at ${t}`);
+                return;
+            }
             // store the selected value directly (either '5' or physical index as string)
             schedules.push({ time: t, motor: m, level: l });
             qs('mTime').value = '';
@@ -972,6 +1037,7 @@
                         <button id=\"addScheduleBtn\" class=\"btn\"><span class=\"icon\">add</span></button>
                         </div>
                         <div id=\"scheduleList\" class=\"list\" style=\"margin-top:0.5rem;\"></div>
+                        <div id=\"scheduleMsg\" class=\"statusline\" style=\"color:#a00; margin-top:0.35rem;\"></div>
                         </div>`, schedules: true
                 },
                 {
@@ -1132,7 +1198,19 @@
                     }).map((s, i) => `<div class='list-item'><div><strong>${s.time}</strong> — ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'} ? ${formatLevelDisplay(s.level)}</div><button class='delete' data-index='${i}'><span class='icon'>delete</span></button></div>`).join('');
                     list.querySelectorAll('.delete').forEach(btn => btn.addEventListener('click', () => { const idx = btn.getAttribute('data-index'); schedules.splice(idx, 1); paintSchedules(); }));
                 }
-                addBtn.addEventListener('click', () => { if (!timeInput.value || !levelSelect.value || !motorSelect.value) return; schedules.push({ time: timeInput.value, motor: motorSelect.value, level: levelSelect.value }); paintSchedules(); timeInput.value = ''; });
+                addBtn.addEventListener('click', () => {
+                    if (!timeInput.value || !levelSelect.value || !motorSelect.value) return;
+                    const t = timeInput.value;
+                    // Prevent duplicate times
+                    if (schedules.some(s => s.time === t)) {
+                        const msg = qs('scheduleMsg');
+                        showTempMessage(msg, `A schedule already exists at ${t}`);
+                        return;
+                    }
+                    schedules.push({ time: t, motor: motorSelect.value, level: levelSelect.value });
+                    paintSchedules();
+                    timeInput.value = '';
+                });
                 fillLevelOptions(); paintSchedules();
             }
 
@@ -1262,13 +1340,15 @@
         /* ------------------------------------------------------------------
          * App bootstrap & polling
          * ------------------------------------------------------------------ */
-        async function bootstrap() {
+        async function bootstrap()
+        {
             // Make Up/Down buttons holdable in panel
             makeRepeatable(qs('btnUp'), () => move('up'));
             makeRepeatable(qs('btnDown'), () => move('down'));
 
-            // Fetch sensor mask early so UI that depends on presence can render correctly
+            // fetch mask and schedules early
             await fetchSensorMask();
+            await loadSchedulesFile();
 
             await decideView();
             if (pollTimer) clearInterval(pollTimer);
