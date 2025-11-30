@@ -659,7 +659,7 @@
             {
                 title: 'Smart Shade Setup',
                 subtitle: 'Welcome!',
-                body: `This wizard will guide you in setting up the configuration for your Smart Shade.<br>Be careful while configuring these settings, as it will not be possible to redo any steps without restarting the setup process.<br><br>Before continuing, please ensure all light sensors you want to use are plugged into the device.<br><br>Use the arrow below when you are ready to proceed.`,
+                body: `This wizard will guide you in setting up the configuration for your Smart Shade.<br><b>Be careful while configuring these settings, as it will not be possible to redo any steps without restarting the setup process.</b><br><br>Before continuing, please ensure all light sensors you want to use are plugged into the device.<br><br>Use the arrow below when you are ready to proceed.`,
                 renderExtras: () => ''
             },
             {
@@ -704,7 +704,7 @@
             {
                 title: 'Smart Shade Setup',
                 subtitle: 'Light Sensitivity',
-                body: `You may adjust the sensitivity of the light sensors if you are in an overcast or particularly bright area.<br>A higher reading indicates a greater amount of light.<br><br>If you are unsure, <b>2500</b> is typically a good amount.<br><br>The highest light level currently being read is <b>${light}</b>.`,
+                body: `You may adjust the sensitivity of the light sensors if you are in an overcast or particularly bright area.<br>A higher reading indicates a greater amount of light.<br><br>If you are unsure, <b>2500</b> is typically a good amount.`,
                 renderExtras: () => `
                     <div class=\"card\">
                     <div style=\"font-size:1.4rem; font-weight:700; text-align:center;\" id=\"thresholdValue\">${threshold}</div>
@@ -869,7 +869,6 @@
                 }
 
                 box.innerHTML = `
-                    <div class='card'><div><strong>Calibration</strong></div><div>Sunshade: ${motor1StepsFinal} ? 0 steps</div><div>Blackout: ${motor2StepsFinal} ? 0 steps</div></div>
                     <div class='card'><div><strong>Levels</strong></div>${levelsSummary}</div>
                     <div class='card'><div><strong>Light Sensitivity</strong> ${threshold}</div></div>
                     <div class='card'><div><strong>Schedules</strong></div>${schedules.length ? schedules.map(s => `${s.time} → ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'}, Sensor ${s.level}`).join('<br>') : 'No schedules added'}</div>`;
