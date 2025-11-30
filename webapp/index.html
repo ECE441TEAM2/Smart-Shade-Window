@@ -563,13 +563,15 @@
             const data = await res.json();
             const container = qs('sensorContainer'); if (!container) return;
             container.innerHTML = '';
-            data.readings.forEach( (r, i) =>
-            {
+
+            // Render sensors in reverse order so sensor 1 is shown at the bottom
+            for (let i = data.readings.length - 1; i >= 0; i--) {
+                const r = data.readings[i];
                 const div = document.createElement('div');
                 div.className = 'list-item';
                 div.textContent = `Sensor ${i + 1}: ${r === null ? 'N/A' : r.toFixed(2) + ' lux'}`;
                 container.appendChild(div);
-            });
+            }
         }
 
         /**
@@ -614,7 +616,20 @@
         function paintSchedEditor()
         {
             const level = qs('mLevel');
-            level.innerHTML = sensorSteps.length ? sensorSteps.map((_, i) => `<option value='${i + 1}'>Sensor ${i + 1}</option>`).join('') : `<option disabled>No Sensors added</option>`;
+            // Populate options in reverse order (highest sensor first)
+            if (sensorSteps.length)
+            {
+                let opts = '';
+                for (let i = sensorSteps.length; i >= 1; i--)
+                {
+                    opts += `<option value='${i}'>Sensor ${i}</option>`;
+                }
+                level.innerHTML = opts;
+            }
+            else
+            {
+                level.innerHTML = `<option disabled>No Sensors added</option>`;
+            }
             const list = qs('mList');
             list.innerHTML = schedules.length ? schedules.map((s, i) => `
                 <div class='list-item'>
@@ -777,7 +792,14 @@
                 const addBtn = qs('addSensorBtn'); const list = qs('sensorList');
                 function paint()
                 {
-                    list.innerHTML = sensorSteps.map((l, i) => `<div class='list-item'><div><strong>Sensor ${i + 1}</strong>: ${l.step} steps</div><button class='delete' data-index='${i}'><span class='icon'>delete</span></button></div>`).join('');
+                    // Render sensor list in reverse so sensor 1 appears at the bottom of the list
+                    let html = '';
+                    for (let i = sensorSteps.length - 1; i >= 0; i--)
+                    {
+                        const l = sensorSteps[i];
+                        html += `<div class='list-item'><div><strong>Sensor ${i + 1}</strong>: ${l.step} steps</div><button class='delete' data-index='${i}'><span class='icon'>delete</span></button></div>`;
+                    }
+                    list.innerHTML = html;
                     list.querySelectorAll('.delete').forEach(btn => btn.addEventListener('click', () => { const idx = Number(btn.getAttribute('data-index')); sensorSteps.splice(idx, 1); paint(); }));
                 }
                 addBtn.addEventListener('click', () => {
@@ -809,7 +831,22 @@
             if (s.schedules)
             {
                 const timeInput = qs('scheduleTime'); const motorSelect = qs('scheduleMotor'); const levelSelect = qs('scheduleLevel'); const addBtn = qs('addScheduleBtn'); const list = qs('scheduleList');
-                const fillLevelOptions = () => { levelSelect.innerHTML = sensorSteps.length ? sensorSteps.map((_, i) => `<option value='${i + 1}'>Sensor ${i + 1}</option>`).join('') : `<option disabled>No Sensors added</option>`; };
+                const fillLevelOptions = () =>
+                {
+                    if (sensorSteps.length)
+                    {
+                        let opts = '';
+                        for (let i = sensorSteps.length; i >= 1; i--)
+                        {
+                            opts += `<option value='${i}'>Sensor ${i}</option>`;
+                        }
+                        levelSelect.innerHTML = opts;
+                    }
+                    else
+                    {
+                        levelSelect.innerHTML = `<option disabled>No Sensors added</option>`;
+                    }
+                };
                 function paintSchedules()
                 {
                     list.innerHTML = schedules.map((s, i) => `<div class='list-item'><div><strong>${s.time}</strong> — ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'} → Sensor Level ${s.level}</div><button class='delete' data-index='${i}'><span class='icon'>delete</span></button></div>`).join('');
@@ -828,9 +865,20 @@
             {
                 const box = qs('summaryBox'); const saveBtn = qs('saveBtn'); const saveMsg = qs('saveNotice');
                 const motor1StepsFinal = config.motors[0] ?? motorSteps[1]; const motor2StepsFinal = config.motors[1] ?? motorSteps[2];
+
+                // Build sensor summary in reverse order (highest sensor first visually)
+                let levelsSummary = 'No Sensors added';
+                if (sensorSteps.length) {
+                    const parts = [];
+                    for (let i = sensorSteps.length - 1; i >= 0; i--) {
+                        parts.push(`Sensor ${i + 1}: ${sensorSteps[i].step} steps`);
+                    }
+                    levelsSummary = parts.join('<br>');
+                }
+
                 box.innerHTML = `
-                    <div class='card'><div><strong>Calibration</strong></div><div>Sunshade: ${motor1StepsFinal} → 0 steps</div><div>Blackout: ${motor2StepsFinal} → 0 steps</div></div>
-                    <div class='card'><div><strong>Levels</strong></div>${sensorSteps.length ? sensorSteps.map((l, i) => `Sensor ${i + 1}: ${l.step} steps`).join('<br>') : 'No Sensors added'}</div>
+                    <div class='card'><div><strong>Calibration</strong></div><div>Sunshade: ${motor1StepsFinal} ? 0 steps</div><div>Blackout: ${motor2StepsFinal} ? 0 steps</div></div>
+                    <div class='card'><div><strong>Levels</strong></div>${levelsSummary}</div>
                     <div class='card'><div><strong>Light Sensitivity</strong> ${threshold}</div></div>
                     <div class='card'><div><strong>Schedules</strong></div>${schedules.length ? schedules.map(s => `${s.time} → ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'}, Sensor ${s.level}`).join('<br>') : 'No schedules added'}</div>`;
 
