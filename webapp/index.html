@@ -151,6 +151,14 @@
              touch-action: manipulation;
          }
 
+         /* smaller button variant used for Refresh/Swap pair */
+         .btn.small {
+            padding: 0.35rem 0.6rem;
+            font-size: 0.92rem;
+            border-radius: 10px;
+            min-width: 64px;
+         }
+
          .btn:hover {
              background-color: #d8caff;
          }
@@ -233,6 +241,11 @@
              padding: 0.5rem 0.8rem 0.8rem;
              border-top: 1px solid #eee;
          }
+
+        /* Ensure wizard nav next button sits at the bottom-right */
+        #wizardNav {
+            justify-content: flex-end;
+        }
 
          .arrow-btn {
              background: none;
@@ -344,7 +357,10 @@
                     <h2>Sensors</h2>
                     <div class="row space">
                         <div class="statusline">Light readings</div>
-                        <button class="btn" onclick="refreshSensors()"><span class="icon">refresh</span>Refresh</button>
+                        <div class="row" style="gap:0.4rem;">
+                            <button class="btn small" onclick="refreshSensors()"><span class="icon">refresh</span>Refresh</button>
+                            <button class="btn small" onclick="swapBlind()"><span class="icon">swap_horiz</span>Swap</button>
+                        </div>
                     </div>
                     <div id="sensorContainer" class="list">Shown in Auto mode</div>
                 </div>
@@ -925,7 +941,7 @@
             const list = qs('mList');
             list.innerHTML = schedules.length ? schedules.map((s, i) => `
                     <div class='list-item'>
-                    <div><strong>${s.time}</strong> — ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'} ? ${formatLevelDisplay(s.level)}</div>
+                    <div><strong>${s.time}</strong> — ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'} → ${formatLevelDisplay(s.level)}</div>
                     <button class='delete' data-i='${i}'><span class='icon'>delete</span></button>
                     </div>`).join('') : 'No schedules yet.';
             list.querySelectorAll('.delete').forEach(b => b.addEventListener('click', () => { const i = +b.getAttribute('data-i'); schedules.splice(i, 1); paintSchedEditor(); }));
@@ -1165,7 +1181,7 @@
                 const fillLevelOptions = () => {
                     const present = getPresentSensorIndices();
                     // always include Top option
-                    let opts = `<option value="5">Top (Level 5)</option>`;
+                    let opts = `<option value="5">Top</option>`;
                     if (present && present.length) {
                         for (let i = present.length - 1; i >= 0; i--) {
                             const phys = present[i];
@@ -1194,7 +1210,7 @@
                         if (lvl === 5) return true;
                         if (presentArr === null) return true;
                         return presentArr.includes(lvl);
-                    }).map((s, i) => `<div class='list-item'><div><strong>${s.time}</strong> — ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'} ? ${formatLevelDisplay(s.level)}</div><button class='delete' data-index='${i}'><span class='icon'>delete</span></button></div>`).join('');
+                    }).map((s, i) => `<div class='list-item'><div><strong>${s.time}</strong> — ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'} → ${formatLevelDisplay(s.level)}</div><button class='delete' data-index='${i}'><span class='icon'>delete</span></button></div>`).join('');
                     list.querySelectorAll('.delete').forEach(btn => btn.addEventListener('click', () => { const idx = btn.getAttribute('data-index'); schedules.splice(idx, 1); paintSchedules(); }));
                 }
                 addBtn.addEventListener('click', () => {

@@ -15,7 +15,7 @@ import datetime
 
 # set up logging
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%H:%M:%S"
 )
@@ -63,7 +63,7 @@ def save_settings():
     try:
         with open(SETTINGS_FILE, "w") as file:
             json.dump(settings, file, indent=4)
-        logging.info("Settings saved!")
+        logging.debug("Settings saved!")
     except Exception as e:
         logging.error(f"Failed to save settings: {e}")
 
