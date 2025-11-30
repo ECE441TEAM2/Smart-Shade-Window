@@ -283,6 +283,11 @@ def serve_index():
     """Serve the HTML webapp."""
     return send_from_directory("webapp", "index.html")
 
+@app.route("/shade_schedules.json")
+def serve_schedules():
+    """Serve the schedules file."""
+    return send_from_directory("webapp", "shade_schedules.json")
+
 @app.route("/api/move", methods=["POST"])
 def api_move():
     """Service webapp request to move the blind up/down."""
