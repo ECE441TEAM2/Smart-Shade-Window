@@ -213,7 +213,7 @@
                         <button class="btn" onclick="setMode('manual')"><span class="icon">touch_app</span>Manual</button>
                         <button class="btn" onclick="setMode('schedule')"><span class="icon">schedule</span>Schedule</button>
                     </div>
-                    <div class="statusline hidden" id="scheduleHint">You are in schedule mode. Your schedules are listed below. Use the top-right <b>gear</b> to edit schedules.</div>
+                    <div class="statusline hidden" id="scheduleHint">You are in schedule mode. Your schedules are listed below. Use the top-right <b>gear</b> to edit sche        * dules.</div>
                 </div>
 
                 <!-- Blind Controls (manual only) -->
@@ -340,10 +340,26 @@
         function hide(el) { el.classList.add('hidden'); }
 
         /**
+        * Return an ar        * ray of physical indices for sensors that are present.
+        * If sensorMask is empty, return null so callers can fallback to other heuristics.
+        */
+        function getPresentSensorIndices()
+        {
+            if (!sensorMask || !sensorMask.length) return null;
+            const out = [];
+            for (let i = 0; i < sensorMask.length; i++)
+            {
+                if (sensorMask[i] === 1) out.push(i);
+            }
+            return out;
+        }
+
+        /**
         * Fetch sensor mask from the client and store it in `sensorMask`.
         * The client exposes the detected mask at /api/sensor_mask.
         */
-        async function fetchSensorMask() {
+        async function fetchSensorMask()
+        {
             try {
                 const res = await fetch('/api/sensor_mask');
                 if (!res.ok) { console.warn('fetchSensorMask: non-OK response'); sensorMask = []; return; }
@@ -351,23 +367,41 @@
                 sensorMask = data.sensor_mask || [];
                 console.debug('fetchSensorMask: sensorMask =', sensorMask);
                 // If schedule editor is open, update level options with the new mask
-                const level = qs('mLevel');
-                if (level) {
-                    let opts = '';
-                    if (sensorMask.length) {
-                        for (let i = sensorMask.length; i >= 1; i--) {
-                            opts += `<option value='${i}'>Sensor ${i}</option>`;
-                        }
-                        level.innerHTML = opts;
-                    } else {
-                        level.innerHTML = `<option disabled>No Sensors detected</option>`;
-                    }
-                }
+                updateScheduleLevelOptionsIfOpen();
             }
             catch (e) {
                 console.error('fetchSensorMask failed:', e);
                 sensorMask = [];
             }
+        }
+
+        function updateScheduleLevelOptionsIfOpen()
+        {
+            const level = qs('mLevel');
+            const wizardLevel = qs('scheduleLevel');
+            const present = getPresentSensorIndices();
+            const count = present ? present.length : 0;
+
+            const buildOptions = (el) =>
+            {
+                if (!el) return;
+                if (count > 0)
+                {
+                    let opts = '';
+                    for (let i = count; i >= 1; i--)
+                    {
+                        opts += `<option value='${i}'>Sensor ${i}</option>`;
+                    }
+                    el.innerHTML = opts;
+                }
+                else
+                {
+                    el.innerHTML = `<option disabled>No Sensors detected</option>`;
+                }
+            };
+
+            buildOptions(level);
+            buildOptions(wizardLevel);
         }
 
         /**
@@ -388,7 +422,8 @@
         * Transforms the given button into a repeatable button (hold to repeat).
         * Useful for manual controls.
         */
-        function makeRepeatable(button, onTick, interval = 140) {
+        function makeRepeatable(button, onTick, interval = 140)
+        {
             let t = null;
             // listen for the button to begin being touched (see below for the event listener)
             const start = (e) =>
@@ -443,14 +478,28 @@
 
         /**
         * Organize the list of active schedules in its panel.
+        * Only show schedules that reference sensors that are present (per sensorMask).
         */
         function paintScheduleList()
         {
             const list = qs('activeScheduleList');
             if (!list) return;
-            list.innerHTML = schedules.length
-                ? schedules.map(s => `<div class='list-item'>${s.time} — ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'} → Sensor ${s.level}</div>`).join('')
-                : 'No schedules configured.';
+
+            // determine how many logical sensor levels are available
+            const present = getPresentSensorIndices();
+            const availableCount = present ? present.length : null;
+
+            const items = schedules.filter(s =>
+            {
+                // allow special '5' (fully open) to be shown regardless
+                const lvl = Number(s.level);
+                if (!isFinite(lvl)) return false;
+                if (lvl === 5) return true;
+                if (availableCount === null) return true; // unknown mask -> show all
+                return lvl >= 1 && lvl <= availableCount;
+            }).map(s => `<div class='list-item'>${s.time} — ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'} ? Sensor ${s.level}</div>`);
+
+            list.innerHTML = items.length ? items.join('') : 'No schedules configured.';
         }
 
         /**
@@ -574,6 +623,7 @@
         /**
         * Send an API call to instruct the client to fetch sensor readings and return them to the web app.
         * This only actually does anything if the blind is in auto mode.
+        * Uses sensorMask (if available) to only display readings for present sensors.
         */
         async function refreshSensors()
         {
@@ -583,12 +633,28 @@
             const container = qs('sensorContainer'); if (!container) return;
             container.innerHTML = '';
 
-            // Render sensors in reverse order so sensor 1 is shown at the bottom
-            for (let i = data.readings.length - 1; i >= 0; i--) {
-                const r = data.readings[i];
+            const readings = data.readings || [];
+            const present = getPresentSensorIndices();
+
+            // Build the list of indices to render (reverse order so sensor 1 shown at bottom)
+            const indicesToRender = [];
+            if (present === null) {
+                // no mask available -> render any sensor that returned a reading
+                for (let i = readings.length - 1; i >= 0; i--) {
+                    indicesToRender.push(i);
+                }
+            } else {
+                // render only present sensors
+                for (let i = present.length - 1; i >= 0; i--) {
+                    indicesToRender.push(present[i]);
+                }
+            }
+
+            for (const i of indicesToRender) {
+                const r = readings[i];
                 const div = document.createElement('div');
                 div.className = 'list-item';
-                div.textContent = `Sensor ${i + 1}: ${r === null ? 'N/A' : r.toFixed(2) + ' lux'}`;
+                div.textContent = `Sensor ${i + 1}: ${r === null || r === undefined ? 'N/A' : (typeof r === 'number' ? r.toFixed(2) + ' lux' : r)}`;
                 container.appendChild(div);
             }
         }
@@ -618,7 +684,7 @@
         /* ------------------------------------------------------------------
          * Settings gear + modals
          * ------------------------------------------------------------------ */
-        qs('gearBtn').addEventListener('click', () => show(qs('settingsModal')));
+        qs('gearBtn').addEventListener('click', async () => { await fetchSensorMask(); show(qs('settingsModal')); });
         qs('closeSettings').addEventListener('click', () => hide(qs('settingsModal')));
 
         // Enter setup with confirmation
@@ -637,9 +703,20 @@
         function paintSchedEditor()
         {
             const level = qs('mLevel');
-            // Populate options in reverse order (highest sensor first)
-            if (sensorSteps.length)
+            // Populate options using sensorMask (only show plugged-in sensors)
+            const present = getPresentSensorIndices();
+            if (present !== null && present.length)
             {
+                let opts = '';
+                for (let i = present.length; i >= 1; i--)
+                {
+                    opts += `<option value='${i}'>Sensor ${i}</option>`;
+                }
+                level.innerHTML = opts;
+            }
+            else if (sensorSteps.length)
+            {
+                // fallback: use sensorSteps length if mask isn't available
                 let opts = '';
                 for (let i = sensorSteps.length; i >= 1; i--)
                 {
@@ -651,6 +728,7 @@
             {
                 level.innerHTML = `<option disabled>No Sensors added</option>`;
             }
+
             const list = qs('mList');
             list.innerHTML = schedules.length ? schedules.map((s, i) => `
                 <div class='list-item'>
@@ -660,7 +738,7 @@
             list.querySelectorAll('.delete').forEach(b => b.addEventListener('click', () => { const i = +b.getAttribute('data-i'); schedules.splice(i, 1); paintSchedEditor(); }));
         }
 
-        function openScheduleEditor() { paintSchedEditor(); show(qs('schedModal')); }
+        function openScheduleEditor() { fetchSensorMask().then(() => { paintSchedEditor(); show(qs('schedModal')); }); }
 
         qs('configSchedulesBtn').addEventListener('click', () => { hide(qs('settingsModal')); openScheduleEditor(); });
         qs('mClose').addEventListener('click', () => hide(qs('schedModal')));
@@ -845,7 +923,7 @@
 
             // Schedules builder:
             // - Render inputs for schedule time, motor selection, sensor/level.
-            // - fillLevelOptions populates available sensor levels (depends on sensorSteps).
+            // - fillLevelOptions populates available sensor levels (depends on sensorMask).
             // - paintSchedules shows existing schedules and wires delete buttons.
             // - addBtn adds a schedule object into the `schedules` array and repaints.
             if (s.schedules)
@@ -853,7 +931,15 @@
                 const timeInput = qs('scheduleTime'); const motorSelect = qs('scheduleMotor'); const levelSelect = qs('scheduleLevel'); const addBtn = qs('addScheduleBtn'); const list = qs('scheduleList');
                 const fillLevelOptions = () =>
                 {
-                    if (sensorSteps.length)
+                    const present = getPresentSensorIndices();
+                    if (present && present.length) {
+                        let opts = '';
+                        for (let i = present.length; i >= 1; i--) {
+                            opts += `<option value='${i}'>Sensor ${i}</option>`;
+                        }
+                        levelSelect.innerHTML = opts;
+                    }
+                    else if (sensorSteps.length)
                     {
                         let opts = '';
                         for (let i = sensorSteps.length; i >= 1; i--)
@@ -869,7 +955,16 @@
                 };
                 function paintSchedules()
                 {
-                    list.innerHTML = schedules.map((s, i) => `<div class='list-item'><div><strong>${s.time}</strong> — ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'} → Sensor Level ${s.level}</div><button class='delete' data-index='${i}'><span class='icon'>delete</span></button></div>`).join('');
+                    // only show schedules that map to present sensors (or special '5')
+                    const present = getPresentSensorIndices();
+                    const availableCount = present ? present.length : null;
+                    list.innerHTML = schedules.filter(s => {
+                        const lvl = Number(s.level);
+                        if (!isFinite(lvl)) return false;
+                        if (lvl === 5) return true;
+                        if (availableCount === null) return true;
+                        return lvl >= 1 && lvl <= availableCount;
+                    }).map((s, i) => `<div class='list-item'><div><strong>${s.time}</strong> — ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'} ? Sensor Level ${s.level}</div><button class='delete' data-index='${i}'><span class='icon'>delete</span></button></div>`).join('');
                     list.querySelectorAll('.delete').forEach(btn => btn.addEventListener('click', () => { const idx = btn.getAttribute('data-index'); schedules.splice(idx, 1); paintSchedules(); }));
                 }
                 addBtn.addEventListener('click', () => { if (!timeInput.value || !levelSelect.value || !motorSelect.value) return; schedules.push({ time: timeInput.value, motor: motorSelect.value, level: levelSelect.value }); paintSchedules(); timeInput.value = ''; });
@@ -1011,6 +1106,9 @@
             // Make Up/Down buttons holdable in panel
             makeRepeatable(qs('btnUp'), () => move('up'));
             makeRepeatable(qs('btnDown'), () => move('down'));
+
+            // Fetch sensor mask early so UI that depends on presence can render correctly
+            await fetchSensorMask();
 
             await decideView();
             if (pollTimer) clearInterval(pollTimer);
