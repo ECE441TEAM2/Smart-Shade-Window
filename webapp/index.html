@@ -213,7 +213,7 @@
                         <button class="btn" onclick="setMode('manual')"><span class="icon">touch_app</span>Manual</button>
                         <button class="btn" onclick="setMode('schedule')"><span class="icon">schedule</span>Schedule</button>
                     </div>
-                    <div class="statusline hidden" id="scheduleHint">You are in schedule mode. Your schedules are listed below. Use the top-right <b>gear</b> to edit sche        * dules.</div>
+                    <div class="statusline hidden" id="scheduleHint">You are in schedule mode. Your schedules are listed below. Use the top-right <b>gear</b> to edit schedules.</div>
                 </div>
 
                 <!-- Blind Controls (manual only) -->
@@ -321,7 +321,7 @@
         let currentStep = 0;
         let motorSteps = { 1: 0, 2: 0 };
         let sensorSteps = [];            // [{step:number}]
-        let schedules = [];              // [{time, motor:'sunshade'|'blackout', level:'1'..}]
+        let schedules = [];              // [{time, motor:'sunshade'|'blackout', level:'0'.. or 5}]
         let threshold = 2500;
 
         // New: presence mask received from client (1 == present, null == not present)
@@ -340,7 +340,8 @@
         function hide(el) { el.classList.add('hidden'); }
 
         /**
-        * Return an ar        * ray of physical indices for sensors that are present.
+        * Return an array of physical indices for sensors that are present (0-based),
+        * e.g. [0,2,4] for sensors 1,3,5 plugged in.
         * If sensorMask is empty, return null so callers can fallback to other heuristics.
         */
         function getPresentSensorIndices()
@@ -352,6 +353,19 @@
                 if (sensorMask[i] === 1) out.push(i);
             }
             return out;
+        }
+
+        /**
+        * Format a stored schedule level for display:
+        * - if '5' => "Top"
+        * - else treat as physical index (0-based) and display "Sensor {index+1}"
+        */
+        function formatLevelDisplay(level)
+        {
+            const n = Number(level);
+            if (!Number.isFinite(n)) return 'Unknown';
+            if (n === 5) return 'Top';
+            return `Sensor ${n + 1}`;
         }
 
         /**
@@ -380,24 +394,35 @@
             const level = qs('mLevel');
             const wizardLevel = qs('scheduleLevel');
             const present = getPresentSensorIndices();
-            const count = present ? present.length : 0;
 
             const buildOptions = (el) =>
             {
                 if (!el) return;
-                if (count > 0)
+                // Add Top option first (client treats 5 as top)
+                let opts = `<option value="5">Top (Level 5)</option>`;
+                if (present && present.length)
                 {
-                    let opts = '';
-                    for (let i = count; i >= 1; i--)
+                    // render highest sensor first (reverse)
+                    for (let i = present.length - 1; i >= 0; i--)
                     {
-                        opts += `<option value='${i}'>Sensor ${i}</option>`;
+                        const phys = present[i];
+                        opts += `<option value='${phys}'>Sensor ${phys + 1}</option>`;
                     }
-                    el.innerHTML = opts;
+                }
+                else if (sensorSteps.length)
+                {
+                    // fallback to sensorSteps count (these correspond to present sensors order)
+                    for (let i = sensorSteps.length - 1; i >= 0; i--)
+                    {
+                        // when fallback, we don't know physical index so use logical index mapped to 0..N-1
+                        opts += `<option value='${i}'>Sensor ${i + 1}</option>`;
+                    }
                 }
                 else
                 {
-                    el.innerHTML = `<option disabled>No Sensors detected</option>`;
+                    opts = `<option disabled>No Sensors detected</option>`;
                 }
+                el.innerHTML = opts;
             };
 
             buildOptions(level);
@@ -479,25 +504,28 @@
         /**
         * Organize the list of active schedules in its panel.
         * Only show schedules that reference sensors that are present (per sensorMask).
+        * Schedule entries store level as:
+        *  - 5 => top-of-window
+        *  - 0..N => physical sensor index (0-based)
         */
         function paintScheduleList()
         {
             const list = qs('activeScheduleList');
             if (!list) return;
 
-            // determine how many logical sensor levels are available
             const present = getPresentSensorIndices();
-            const availableCount = present ? present.length : null;
 
-            const items = schedules.filter(s =>
-            {
-                // allow special '5' (fully open) to be shown regardless
+            const items = schedules.filter(s => {
                 const lvl = Number(s.level);
-                if (!isFinite(lvl)) return false;
+                if (!Number.isFinite(lvl)) return false;
                 if (lvl === 5) return true;
-                if (availableCount === null) return true; // unknown mask -> show all
-                return lvl >= 1 && lvl <= availableCount;
-            }).map(s => `<div class='list-item'>${s.time} — ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'} ? Sensor ${s.level}</div>`);
+                if (present === null) return true; // unknown mask -> show all
+                // include only if the physical index is present
+                return present.includes(lvl);
+            }).map(s => {
+                const levelLabel = formatLevelDisplay(s.level);
+                return `<div class='list-item'>${s.time} — ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'} ? ${levelLabel}</div>`;
+            });
 
             list.innerHTML = items.length ? items.join('') : 'No schedules configured.';
         }
@@ -644,7 +672,7 @@
                     indicesToRender.push(i);
                 }
             } else {
-                // render only present sensors
+                // render only present sensors (physical indices), highest first
                 for (let i = present.length - 1; i >= 0; i--) {
                     indicesToRender.push(present[i]);
                 }
@@ -705,34 +733,32 @@
             const level = qs('mLevel');
             // Populate options using sensorMask (only show plugged-in sensors)
             const present = getPresentSensorIndices();
-            if (present !== null && present.length)
-            {
-                let opts = '';
-                for (let i = present.length; i >= 1; i--)
-                {
-                    opts += `<option value='${i}'>Sensor ${i}</option>`;
+
+            // Build options: include Top (5) first, then present sensors (highest first)
+            if (present && present.length) {
+                let opts = `<option value="5">Top (Level 5)</option>`;
+                for (let i = present.length - 1; i >= 0; i--) {
+                    const phys = present[i];
+                    opts += `<option value='${phys}'>Sensor ${phys + 1}</option>`;
                 }
                 level.innerHTML = opts;
             }
-            else if (sensorSteps.length)
-            {
-                // fallback: use sensorSteps length if mask isn't available
-                let opts = '';
-                for (let i = sensorSteps.length; i >= 1; i--)
-                {
-                    opts += `<option value='${i}'>Sensor ${i}</option>`;
+            else if (sensorSteps.length) {
+                // fallback: use sensorSteps length (logical order) — values will be 0..N-1
+                let opts = `<option value="5">Top (Level 5)</option>`;
+                for (let i = sensorSteps.length - 1; i >= 0; i--) {
+                    opts += `<option value='${i}'>Sensor ${i + 1}</option>`;
                 }
                 level.innerHTML = opts;
             }
-            else
-            {
+            else {
                 level.innerHTML = `<option disabled>No Sensors added</option>`;
             }
 
             const list = qs('mList');
             list.innerHTML = schedules.length ? schedules.map((s, i) => `
                 <div class='list-item'>
-                <div><strong>${s.time}</strong> — ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'} → Sensor ${s.level}</div>
+                <div><strong>${s.time}</strong> — ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'} ? ${formatLevelDisplay(s.level)}</div>
                 <button class='delete' data-i='${i}'><span class='icon'>delete</span></button>
                 </div>`).join('') : 'No schedules yet.';
             list.querySelectorAll('.delete').forEach(b => b.addEventListener('click', () => { const i = +b.getAttribute('data-i'); schedules.splice(i, 1); paintSchedEditor(); }));
@@ -745,6 +771,7 @@
         qs('mAdd').addEventListener('click', () => {
             const t = qs('mTime').value; const m = qs('mMotor').value; const l = qs('mLevel').value;
             if (!t || !m || !l) return;
+            // store the selected value directly (either '5' or physical index as string)
             schedules.push({ time: t, motor: m, level: l });
             qs('mTime').value = '';
             paintSchedEditor();
@@ -932,24 +959,23 @@
                 const fillLevelOptions = () =>
                 {
                     const present = getPresentSensorIndices();
+                    // always include Top option
+                    let opts = `<option value="5">Top (Level 5)</option>`;
                     if (present && present.length) {
-                        let opts = '';
-                        for (let i = present.length; i >= 1; i--) {
-                            opts += `<option value='${i}'>Sensor ${i}</option>`;
+                        for (let i = present.length - 1; i >= 0; i--) {
+                            const phys = present[i];
+                            opts += `<option value='${phys}'>Sensor ${phys + 1}</option>`;
                         }
                         levelSelect.innerHTML = opts;
                     }
-                    else if (sensorSteps.length)
-                    {
-                        let opts = '';
-                        for (let i = sensorSteps.length; i >= 1; i--)
-                        {
-                            opts += `<option value='${i}'>Sensor ${i}</option>`;
+                    else if (sensorSteps.length) {
+                        // fallback: logical 0..N-1
+                        for (let i = sensorSteps.length - 1; i >= 0; i--) {
+                            opts += `<option value='${i}'>Sensor ${i + 1}</option>`;
                         }
                         levelSelect.innerHTML = opts;
                     }
-                    else
-                    {
+                    else {
                         levelSelect.innerHTML = `<option disabled>No Sensors added</option>`;
                     }
                 };
@@ -962,9 +988,9 @@
                         const lvl = Number(s.level);
                         if (!isFinite(lvl)) return false;
                         if (lvl === 5) return true;
-                        if (availableCount === null) return true;
-                        return lvl >= 1 && lvl <= availableCount;
-                    }).map((s, i) => `<div class='list-item'><div><strong>${s.time}</strong> — ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'} ? Sensor Level ${s.level}</div><button class='delete' data-index='${i}'><span class='icon'>delete</span></button></div>`).join('');
+                        if (present === null) return true;
+                        return present.includes(lvl);
+                    }).map((s, i) => `<div class='list-item'><div><strong>${s.time}</strong> — ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'} ? ${formatLevelDisplay(s.level)}</div><button class='delete' data-index='${i}'><span class='icon'>delete</span></button></div>`).join('');
                     list.querySelectorAll('.delete').forEach(btn => btn.addEventListener('click', () => { const idx = btn.getAttribute('data-index'); schedules.splice(idx, 1); paintSchedules(); }));
                 }
                 addBtn.addEventListener('click', () => { if (!timeInput.value || !levelSelect.value || !motorSelect.value) return; schedules.push({ time: timeInput.value, motor: motorSelect.value, level: levelSelect.value }); paintSchedules(); timeInput.value = ''; });
@@ -994,7 +1020,7 @@
                 box.innerHTML = `
                     <div class='card'><div><strong>Levels</strong></div>${levelsSummary}</div>
                     <div class='card'><div><strong>Light Sensitivity</strong> ${threshold}</div></div>
-                    <div class='card'><div><strong>Schedules</strong></div>${schedules.length ? schedules.map(s => `${s.time} → ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'}, Sensor ${s.level}`).join('<br>') : 'No schedules added'}</div>`;
+                    <div class='card'><div><strong>Schedules</strong></div>${schedules.length ? schedules.map(s => `${s.time} ? ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'}, ${formatLevelDisplay(s.level)}`).join('<br>') : 'No schedules added'}</div>`;
 
                 saveBtn.addEventListener('click', async () => {
                     const settings = makeSettingsPayload();
