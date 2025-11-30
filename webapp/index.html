@@ -2,187 +2,300 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Smart Shade</title>
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
-  <style>
-    :root
-    {
-      --bg: #eae7f5;
-      --card: #fefcff;
-      --accent: #3b228a;
-      --accent-soft: #e6dbff;
-      --muted: #f7f4ff;
-      --text: #222;
-      --danger: #a00;
-    }
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Shade</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <style>
+         :root {
+             --bg: #eae7f5;
+             --card: #fefcff;
+             --accent: #3b228a;
+             --accent-soft: #e6dbff;
+             --muted: #f7f4ff;
+             --text: #222;
+             --danger: #a00;
+         }
 
-    * { box-sizing: border-box; }
+         * {
+             box-sizing: border-box;
+         }
 
-    html, body { height: 100%; }
+         html, body {
+             height: 100%;
+         }
 
-    body 
-    {
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background-color: var(--bg);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin: 0;
-      color: var(--text);
-    }
+         body {
+             font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+             background-color: var(--bg);
+             display: flex;
+             justify-content: center;
+             align-items: center;
+             margin: 0;
+             color: var(--text);
+         }
 
-    /* Phone frame container */
-    .phone-frame 
-    {
-      width: 390px; /* iPhone 12/13 mini width */
-      height: 760px;
-      background: var(--card);
-      border-radius: 32px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-    }
+         /* Phone frame container */
+         .phone-frame {
+             width: 390px; /* iPhone 12/13 mini width */
+             height: 760px;
+             background: var(--card);
+             border-radius: 32px;
+             box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+             overflow: hidden;
+             display: flex;
+             flex-direction: column;
+             position: relative;
+         }
 
-    .header 
-    {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0.9rem 2.75rem; /* leave room for gear */
-      border-bottom: 1px solid #eee;
-      position: relative;
-    }
+         .header {
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             padding: 0.9rem 2.75rem; /* leave room for gear */
+             border-bottom: 1px solid #eee;
+             position: relative;
+         }
 
-    .header h1 { font-size: 1.25rem; margin: 0; color: var(--accent); }
+         .header h1 {
+             font-size: 1.25rem;
+             margin: 0;
+             color: var(--accent);
+         }
 
-    .gear-btn 
-    {
-      position: absolute;
-      right: 1rem;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      cursor: pointer;
-    }
-    .gear-btn .material-icons { font-size: 26px; color: var(--accent); vertical-align: middle; }
+         .gear-btn {
+             position: absolute;
+             right: 1rem;
+             top: 50%;
+             transform: translateY(-50%);
+             background: none;
+             border: none;
+             cursor: pointer;
+         }
 
-    .card .row 
-    {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      gap: 0.5rem;
-    }
+         .gear-btn .material-icons {
+             font-size: 26px;
+             color: var(--accent);
+             vertical-align: middle;
+         }
 
-    .card .row .btn 
-    {
-      flex: 1 1 calc(33.3% - 0.5rem);
-      min-width: 100px;
-      text-align: center;
-      justify-content: center;
-    }
+         .card .row {
+             display: flex;
+             flex-wrap: wrap;
+             justify-content: space-between;
+             gap: 0.5rem;
+         }
 
-    .container 
-    {
-      padding: 1rem 1.25rem 0.5rem 1.25rem;
-      flex: 1;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-    }
+         .card .row .btn {
+             flex: 1 1 calc(33.3% - 0.5rem);
+             min-width: 100px;
+             text-align: center;
+             justify-content: center;
+         }
 
-    /* Shared UI pieces */
-    h2 { font-size: 1.1rem; margin: 0 0 0.5rem; color: var(--accent); }
-    p { font-size: 0.98rem; line-height: 1.45; }
+         .container {
+             padding: 1rem 1.25rem 0.5rem 1.25rem;
+             flex: 1;
+             overflow-y: auto;
+             -webkit-overflow-scrolling: touch;
+         }
 
-    .card 
-    {
-      background: var(--muted);
-      border-radius: 12px;
-      padding: 0.9rem;
-      margin: 0.6rem 0;
-    }
+         /* Shared UI pieces */
+         h2 {
+             font-size: 1.1rem;
+             margin: 0 0 0.5rem;
+             color: var(--accent);
+         }
 
-    .row { display: flex; align-items: center; gap: 0.5rem; }
-    .row.space { justify-content: space-between; }
-    .col { display: flex; flex-direction: column; gap: 0.5rem; }
+         p {
+             font-size: 0.98rem;
+             line-height: 1.45;
+         }
 
-    .btn 
-    {
-      background-color: var(--accent-soft);
-      color: var(--accent);
-      border: none;
-      border-radius: 12px;
-      padding: 0.6rem 0.95rem;
-      font-size: 1rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      cursor: pointer;
-      transition: transform 0.05s ease, background-color 0.2s ease;
-      user-select: none;
-      touch-action: manipulation;
-    }
+         .card {
+             background: var(--muted);
+             border-radius: 12px;
+             padding: 0.9rem;
+             margin: 0.6rem 0;
+         }
 
-    .btn:hover { background-color: #d8caff; }
-    .btn:active { transform: translateY(1px); }
-    .btn.primary { background: var(--accent); color: #fff; }
-    .btn.danger { color: #fff; background: #c43a3a; }
+         .row {
+             display: flex;
+             align-items: center;
+             gap: 0.5rem;
+         }
 
-    .icon { font-family: 'Material Icons'; font-size: 22px; }
+         .row.space {
+             justify-content: space-between;
+         }
 
-    input[type="range"] { width: 100%; accent-color: #7b4cff; }
-    input[type="time"], select, input[type="number"], input[type="text"] 
-    {
-      width: 100%;
-      padding: 0.55rem 0.7rem;
-      border-radius: 10px;
-      border: 1px solid #ddd;
-      font-size: 0.95rem;
-      background: #fff;
-    }
+         .col {
+             display: flex;
+             flex-direction: column;
+             gap: 0.5rem;
+         }
 
-    .list { max-height: 180px; overflow-y: auto; }
+         .btn {
+             background-color: var(--accent-soft);
+             color: var(--accent);
+             border: none;
+             border-radius: 12px;
+             padding: 0.6rem 0.95rem;
+             font-size: 1rem;
+             display: inline-flex;
+             align-items: center;
+             gap: 0.4rem;
+             cursor: pointer;
+             transition: transform 0.05s ease, background-color 0.2s ease;
+             user-select: none;
+             touch-action: manipulation;
+         }
 
-    .list-item 
-    {
-      background: #fff;
-      border: 1px solid #eee;
-      border-radius: 10px;
-      padding: 0.55rem 0.7rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin: 0.4rem 0;
-    }
+         .btn:hover {
+             background-color: #d8caff;
+         }
 
-    .delete { background: transparent; border: none; color: var(--danger); cursor: pointer; }
+         .btn:active {
+             transform: translateY(1px);
+         }
 
-    .summary-box { background: var(--muted); border-radius: 12px; padding: 0.8rem; font-size: 0.95rem; }
-    .statusline { font-size: 0.9rem; color: #555; margin: 0.25rem 0; }
+         .btn.primary {
+             background: var(--accent);
+             color: #fff;
+         }
 
-    /* Wizard nav */
-    .nav { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.8rem 0.8rem; border-top: 1px solid #eee; }
-    .arrow-btn { background: none; border: none; cursor: pointer; }
-    .arrow-btn .material-icons { font-size: 36px; color: var(--accent); }
+         .btn.danger {
+             color: #fff;
+             background: #c43a3a;
+         }
 
-    .hidden { display: none !important; }
+         .icon {
+             font-family: 'Material Icons';
+             font-size: 22px;
+         }
 
-    /* Simple modal */
-    .modal-backdrop 
-    {
-      position: absolute; inset: 0; background: rgba(0,0,0,0.35);
-      display: flex; align-items: flex-end; justify-content: center;
-      padding: 1rem; z-index: 10;
-    }
+         input[type="range"] {
+             width: 100%;
+             accent-color: #7b4cff;
+         }
 
-    .modal { width: 100%; max-width: 380px; background: #fff; border-radius: 16px; padding: 0.9rem; }
-    .modal h3 { margin: 0 0 0.5rem; font-size: 1.05rem; color: var(--accent); }
-  </style>
+         input[type="time"], select, input[type="number"], input[type="text"] {
+             width: 100%;
+             padding: 0.55rem 0.7rem;
+             border-radius: 10px;
+             border: 1px solid #ddd;
+             font-size: 0.95rem;
+             background: #fff;
+         }
+
+        /* Default list size kept small; sensor-specific lists enlarged below */
+         .list {
+             max-height: 180px;
+             overflow-y: auto;
+         }
+
+         .list-item {
+             background: #fff;
+             border: 1px solid #eee;
+             border-radius: 10px;
+             padding: 0.55rem 0.7rem;
+             display: flex;
+             align-items: center;
+             justify-content: space-between;
+             margin: 0.4rem 0;
+         }
+
+         .delete {
+             background: transparent;
+             border: none;
+             color: var(--danger);
+             cursor: pointer;
+         }
+
+         .summary-box {
+             background: var(--muted);
+             border-radius: 12px;
+             padding: 0.8rem;
+             font-size: 0.95rem;
+         }
+
+         .statusline {
+             font-size: 0.9rem;
+             color: #555;
+             margin: 0.25rem 0;
+         }
+
+         /* Wizard nav */
+         .nav {
+             display: flex;
+             justify-content: space-between;
+             align-items: center;
+             padding: 0.5rem 0.8rem 0.8rem;
+             border-top: 1px solid #eee;
+         }
+
+         .arrow-btn {
+             background: none;
+             border: none;
+             cursor: pointer;
+         }
+
+         .arrow-btn .material-icons {
+             font-size: 36px;
+             color: var(--accent);
+         }
+
+         .hidden {
+             display: none !important;
+         }
+
+         /* Simple modal */
+         .modal-backdrop {
+             position: absolute;
+             inset: 0;
+             background: rgba(0,0,0,0.35);
+             display: flex;
+             align-items: flex-end;
+             justify-content: center;
+             padding: 1rem;
+             z-index: 10;
+         }
+
+         .modal {
+             width: 100%;
+             max-width: 380px;
+             background: #fff;
+             border-radius: 16px;
+             padding: 0.9rem;
+         }
+
+         .modal h3 {
+             margin: 0 0 0.5rem;
+             font-size: 1.05rem;
+             color: var(--accent);
+         }
+
+         /* disabled appearance for next button */
+         .nav .disabled {
+             opacity: 0.35;
+             pointer-events: none;
+         }
+
+         /* Sensor lists need to show all present sensors without scrolling.
+        Increase max-height to accommodate up to 5 sensors comfortably. */
+         #sensorContainer, #sensorList, #mList, #scheduleList, #activeScheduleList {
+             max-height: 320px;
+             overflow-y: auto;
+         }
+
+         /* inline hint styling for sensor setup step */
+         #sensorProgress {
+             text-align: center;
+             font-size: 0.95rem;
+             color: #444;
+             margin-top: 0.4rem;
+         }
+    </style>
 </head>
 <body>
     <div class="phone-frame">
@@ -344,12 +457,10 @@
         * e.g. [0,2,4] for sensors 1,3,5 plugged in.
         * If sensorMask is empty, return null so callers can fallback to other heuristics.
         */
-        function getPresentSensorIndices()
-        {
+        function getPresentSensorIndices() {
             if (!sensorMask || !sensorMask.length) return null;
             const out = [];
-            for (let i = 0; i < sensorMask.length; i++)
-            {
+            for (let i = 0; i < sensorMask.length; i++) {
                 if (sensorMask[i] === 1) out.push(i);
             }
             return out;
@@ -360,8 +471,7 @@
         * - if '5' => "Top"
         * - else treat as physical index (0-based) and display "Sensor {index+1}"
         */
-        function formatLevelDisplay(level)
-        {
+        function formatLevelDisplay(level) {
             const n = Number(level);
             if (!Number.isFinite(n)) return 'Unknown';
             if (n === 5) return 'Top';
@@ -369,11 +479,45 @@
         }
 
         /**
+         * Update state of the wizard nav (next button), the Add Sensor button
+         * and the inline progress hint when on the sensor configuration step.
+         */
+        function updateSensorStepNavState() {
+            const present = getPresentSensorIndices();
+            const addBtn = qs('addSensorBtn');
+            const nextBtn = qs('nextBtn');
+            const prog = qs('sensorProgress');
+
+            if (!present) {
+                // No mask -> allow free behaviour (old behaviour). Ensure controls enabled.
+                if (addBtn) addBtn.disabled = false;
+                if (nextBtn) { nextBtn.classList.remove('disabled'); nextBtn.disabled = false; }
+                if (prog) prog.textContent = 'Sensor mask unavailable — add sensors manually';
+                return;
+            }
+
+            // We must add exactly one entry per present sensor (in present order).
+            const needed = present.length;
+            const have = sensorSteps.length;
+
+            // update progress hint
+            if (prog) prog.textContent = `${have} of ${needed} sensors configured`;
+
+            // disable add when we've collected all
+            if (addBtn) addBtn.disabled = (have >= needed);
+
+            // prevent moving to next until all collected
+            if (nextBtn) {
+                if (have >= needed) { nextBtn.classList.remove('disabled'); nextBtn.disabled = false; }
+                else { nextBtn.classList.add('disabled'); nextBtn.disabled = true; }
+            }
+        }
+
+        /**
         * Fetch sensor mask from the client and store it in `sensorMask`.
         * The client exposes the detected mask at /api/sensor_mask.
         */
-        async function fetchSensorMask()
-        {
+        async function fetchSensorMask() {
             try {
                 const res = await fetch('/api/sensor_mask');
                 if (!res.ok) { console.warn('fetchSensorMask: non-OK response'); sensorMask = []; return; }
@@ -389,37 +533,30 @@
             }
         }
 
-        function updateScheduleLevelOptionsIfOpen()
-        {
+        function updateScheduleLevelOptionsIfOpen() {
             const level = qs('mLevel');
             const wizardLevel = qs('scheduleLevel');
             const present = getPresentSensorIndices();
 
-            const buildOptions = (el) =>
-            {
+            const buildOptions = (el) => {
                 if (!el) return;
                 // Add Top option first (client treats 5 as top)
                 let opts = `<option value="5">Top (Level 5)</option>`;
-                if (present && present.length)
-                {
+                if (present && present.length) {
                     // render highest sensor first (reverse)
-                    for (let i = present.length - 1; i >= 0; i--)
-                    {
+                    for (let i = present.length - 1; i >= 0; i--) {
                         const phys = present[i];
                         opts += `<option value='${phys}'>Sensor ${phys + 1}</option>`;
                     }
                 }
-                else if (sensorSteps.length)
-                {
+                else if (sensorSteps.length) {
                     // fallback to sensorSteps count (these correspond to present sensors order)
-                    for (let i = sensorSteps.length - 1; i >= 0; i--)
-                    {
+                    for (let i = sensorSteps.length - 1; i >= 0; i--) {
                         // when fallback, we don't know physical index so use logical index mapped to 0..N-1
                         opts += `<option value='${i}'>Sensor ${i + 1}</option>`;
                     }
                 }
-                else
-                {
+                else {
                     opts = `<option disabled>No Sensors detected</option>`;
                 }
                 el.innerHTML = opts;
@@ -431,9 +568,9 @@
 
         /**
         * Builds a JSON of the active settings, to be sent to the client.
+        * sensor_steps is sent as an array of step counts in the same order as present sensors.
         */
-        function makeSettingsPayload()
-        {
+        function makeSettingsPayload() {
             return {
                 op_mode: statusState.mode,
                 active_shade: statusState.active_shade,
@@ -443,26 +580,22 @@
             };
         }
 
-        /** 
+        /**
         * Transforms the given button into a repeatable button (hold to repeat).
         * Useful for manual controls.
         */
-        function makeRepeatable(button, onTick, interval = 140)
-        {
+        function makeRepeatable(button, onTick, interval = 140) {
             let t = null;
             // listen for the button to begin being touched (see below for the event listener)
-            const start = (e) =>
-            {
+            const start = (e) => {
                 e.preventDefault();
                 if (t) return;
                 onTick();
                 t = setInterval(onTick, interval);
             };
             // and listen for the button no longer being touched
-            const stop = () =>
-            {
-                if (t)
-                {
+            const stop = () => {
+                if (t) {
                     clearInterval(t);
                     t = null;
                 }
@@ -475,8 +608,7 @@
         /**
         * Transition to the setup wizard, hiding the main interface if it is active.
         */
-        function showWizard()
-        {
+        function showWizard() {
             show(qs('wizardRoot'));
             show(qs('wizardNav'));
             hide(qs('panelRoot'));
@@ -486,11 +618,10 @@
             renderStep();
         }
 
-        /** 
+        /**
         * Depending on the active mode, show its panel on the main interface.
         */
-        function paintPanelVisibility()
-        {
+        function paintPanelVisibility() {
             const isAuto = statusState.mode === 'auto';
             const isManual = statusState.mode === 'manual';
             const isSchedule = statusState.mode === 'schedule';
@@ -508,8 +639,7 @@
         *  - 5 => top-of-window
         *  - 0..N => physical sensor index (0-based)
         */
-        function paintScheduleList()
-        {
+        function paintScheduleList() {
             const list = qs('activeScheduleList');
             if (!list) return;
 
@@ -533,8 +663,7 @@
         /**
         * Transition to the main interface, hiding the setup panel if it is active.
         */
-        function showPanel()
-        {
+        function showPanel() {
             hide(qs('wizardRoot'));
             hide(qs('wizardNav'));
             show(qs('panelRoot'));
@@ -544,27 +673,23 @@
             refreshSensors();
         }
 
-        /** 
+        /**
         * Capitalize the first letter of a given string. Used for clean display of mode and blind names.
         * @param {string} sentence
         */
-        function capitalize(sentence)
-        {
+        function capitalize(sentence) {
             return sentence.charAt(0).toUpperCase() + sentence.slice(1);
         }
 
         /**
         * Upon receiving a status update, switch between the main interface and the setup wizard if necessary.
         */
-        async function decideView()
-        {
-            try
-            {
+        async function decideView() {
+            try {
                 await updateStatus();
                 if (statusState.mode === 'setup') showWizard(); else showPanel();
             }
-            catch (e)
-            {
+            catch (e) {
                 console.error('Failed to decide view:', e); showPanel();
             }
         }
@@ -576,8 +701,7 @@
         /**
         * Send an API call to obtain the device status from the client.
         */
-        async function updateStatus()
-        {
+        async function updateStatus() {
             const res = await fetch('/api/status');
             const data = await res.json();
             statusState.mode = data.mode;
@@ -585,8 +709,7 @@
             statusState.step = data.step;
 
             // update various UI elements based on this information
-            if (qs('modeDisplay'))
-            {
+            if (qs('modeDisplay')) {
                 qs('modeDisplay').textContent = capitalize(statusState.mode);
                 qs('shadeDisplay').textContent = capitalize(statusState.active_shade);
                 qs('stepDisplay').textContent = statusState.step;
@@ -600,8 +723,7 @@
         * Send an API call to instruct the client to change modes.
         * @param {string} mode 'auto', 'manual', 'schedule', or 'setup'
         */
-        async function setMode(mode)
-        {
+        async function setMode(mode) {
             // When explicitly requesting setup, always reset the wizard to the first page.
             if (mode === 'setup') currentStep = 0;
 
@@ -615,8 +737,7 @@
         * From this end, movement is done 10 steps at a time because each step is so small. Thus only direction must be specified.
         * @param {string} direction 'up' or 'down'
         */
-        async function move(direction)
-        {
+        async function move(direction) {
             await fetch('/api/move', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ direction, steps: 10 }) });
             updateStatus();
         }
@@ -635,15 +756,12 @@
         /**
         * Send an API call to instruct the client to swap the active blind.
         */
-        async function swapBlind()
-        {
-            try
-            {
+        async function swapBlind() {
+            try {
                 await fetch('/api/swap', { method: 'POST' });
                 updateStatus();
             }
-            catch (e)
-            {
+            catch (e) {
                 console.error('Swap failed', e);
             }
         }
@@ -653,8 +771,7 @@
         * This only actually does anything if the blind is in auto mode.
         * Uses sensorMask (if available) to only display readings for present sensors.
         */
-        async function refreshSensors()
-        {
+        async function refreshSensors() {
             if (statusState.mode !== 'auto') return; // only fetch/paint in auto
             const res = await fetch('/api/sensors');
             const data = await res.json();
@@ -690,8 +807,7 @@
         /**
         * Send an API call to instruct the client to save the active settings and schedules.
         */
-        async function save(settings, schedulesPayload)
-        {
+        async function save(settings, schedulesPayload) {
             const res = await fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ settings, schedules: schedulesPayload }) });
             return res.ok;
         }
@@ -699,8 +815,7 @@
         /**
         * Render the "config saved" message that pops up at the end of setup.
         */
-        async function savePanelConfig()
-        {
+        async function savePanelConfig() {
             const settings = makeSettingsPayload();
             const ok = await save(settings, schedules);
             const msg = qs('settingsSaveMsg');
@@ -728,8 +843,7 @@
         });
 
         // Open schedule editor
-        function paintSchedEditor()
-        {
+        function paintSchedEditor() {
             const level = qs('mLevel');
             // Populate options using sensorMask (only show plugged-in sensors)
             const present = getPresentSensorIndices();
@@ -757,10 +871,10 @@
 
             const list = qs('mList');
             list.innerHTML = schedules.length ? schedules.map((s, i) => `
-                <div class='list-item'>
-                <div><strong>${s.time}</strong> — ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'} ? ${formatLevelDisplay(s.level)}</div>
-                <button class='delete' data-i='${i}'><span class='icon'>delete</span></button>
-                </div>`).join('') : 'No schedules yet.';
+                    <div class='list-item'>
+                    <div><strong>${s.time}</strong> — ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'} ? ${formatLevelDisplay(s.level)}</div>
+                    <button class='delete' data-i='${i}'><span class='icon'>delete</span></button>
+                    </div>`).join('') : 'No schedules yet.';
             list.querySelectorAll('.delete').forEach(b => b.addEventListener('click', () => { const i = +b.getAttribute('data-i'); schedules.splice(i, 1); paintSchedEditor(); }));
         }
 
@@ -788,95 +902,95 @@
         * Strings for the setup wizard to use.
         */
         const steps =
-        [
-            {
-                title: 'Smart Shade Setup',
-                subtitle: 'Welcome!',
-                body: `This wizard will guide you in setting up the configuration for your Smart Shade.<br><b>Be careful while configuring these settings, as it will not be possible to redo any steps without restarting the setup process.</b><br><br>Before continuing, please ensure all light sensors you want to use are plugged into the device.<br><br>Use the arrow below when you are ready to proceed.`,
-                renderExtras: () => ''
-            },
-            {
-                title: 'Smart Shade Setup',
-                subtitle: 'Calibration (Sunshade)',
-                body: `First, set the Sunshade <b>fully up</b> using the controls below.`,
-                renderExtras: () => `
-                    <div class=\"row\" style=\"justify-content:center; gap:1rem; margin-top:0.6rem;\">
-                    <button id=\"wUp1\" class=\"btn\"><span class=\"icon\">north</span>Up</button>
-                    <button id=\"wDown1\" class=\"btn\"><span class=\"icon\">south</span>Down</button>
-                    </div>`, motor: 1
-            },
-            {
-                title: 'Smart Shade Setup',
-                subtitle: 'Calibration (Blackout)',
-                body: `Next, set the Blackout Shade <b>fully up</b> using the controls below.<br>It should be perfectly level with the Sunshade.`,
-                renderExtras: () => `
-                    <div class=\"row\" style=\"justify-content:center; gap:1rem; margin-top:0.6rem;\">
-                    <button id=\"wUp2\" class=\"btn\"><span class=\"icon\">north</span>Up</button>
-                    <button id=\"wDown2\" class=\"btn\"><span class=\"icon\">south</span>Down</button>
-                    </div>`, motor: 2
-            },
-            {
-                title: 'Smart Shade Setup',
-                subtitle: 'Sensor Positions',
-                body: `Place your light sensors on the window frame.<br>You may space them however you like, but please ensure they are placed in order of port: port 0 should be the bottommost sensor, port 1 should be the next highest, and so on.<br><br>Once the sensors are in place, use the controls below to line the blind up with each sensor's position, starting from the bottommost sensor.<br>Once the blind is level with a sensor, use the 'Add Sensor' button to save that sensor's position.<br><br>Continue once the positions of all sensors have been saved.`,
-                renderExtras: () => `
-                    <div class=\"card\" style=\"margin-top:0.4rem;\">
-                    <div class=\"row space\">
-                    <div><b>Sunshade step</b>: <span id=\"motorStep1b\">${motorSteps[1]}</span></div>
-                    <div class=\"row\">
-                    <button id=\"wUp3\" class=\"btn\"><span class=\"icon\">north</span></button>
-                    <button id=\"wDown3\" class=\"btn\"><span class=\"icon\">south</span></button>
-                    </div>
-                    </div>
-                    <div class=\"row\" style=\"justify-content:center; margin-top:0.5rem;\">
-                    <button id=\"addSensorBtn\" class=\"btn\"><span class=\"icon\">add</span>Add Sensor</button>
-                    </div>
-                    <div id=\"sensorList\" class=\"list\" style=\"margin-top:0.5rem;\"></div>
-                    </div>`, sensor_steps: true
-            },
-            {
-                title: 'Smart Shade Setup',
-                subtitle: 'Light Sensitivity',
-                body: `You may adjust the sensitivity of the light sensors if you are in an overcast or particularly bright area.<br>A higher reading indicates a greater amount of light.<br><br>If you are unsure, <b>2500</b> is typically a good amount.`,
-                renderExtras: () => `
-                    <div class=\"card\">
-                    <div style=\"font-size:1.4rem; font-weight:700; text-align:center;\" id=\"thresholdValue\">${threshold}</div>
-                    <input type=\"range\" id=\"thresholdSlider\" min=\"0\" max=\"10000\" step=\"250\" value=\"${threshold}\">
-                    </div>`, threshold: true
-            },
-            {
-                title: 'Smart Shade Setup',
-                subtitle: '(Optional) Schedule Configuration',
-                body: 'You may schedule actions for the shade to perform automatically when it is in Schedule Mode.<br>This can be completed or added to at a later time.',
-                renderExtras: () => `
-                    <div class=\"card\">
-                    <div class=\"row\" style=\"gap:0.5rem; flex-wrap:wrap;\">
-                    <input type=\"time\" id=\"scheduleTime\" />
-                    <select id=\"scheduleMotor\"><option value=\"sunshade\">Sunshade</option><option value=\"blackout\">Blackout</option></select>
-                    <select id=\"scheduleLevel\"></select>
-                    <button id=\"addScheduleBtn\" class=\"btn\"><span class=\"icon\">add</span></button>
-                    </div>
-                    <div id=\"scheduleList\" class=\"list\" style=\"margin-top:0.5rem;\"></div>
-                    </div>`, schedules: true
-            },
-            {
-                title: 'Smart Shade Setup',
-                subtitle: 'Review & Save',
-                body: 'Setup is now complete.<br>Review the settings below and press “Save Configuration” to apply them.<br><br>If any errors have been made, please repeat the setup process.',
-                renderExtras: () => `
-                    <div id=\"summaryBox\" class=\"summary-box\" style=\"margin-top:0.5rem;\"></div>
-                    <div class=\"row\" style=\"justify-content:center; margin-top:0.6rem;\">
-                    <button id=\"saveBtn\" class=\"btn primary\"><span class=\"icon\">save</span>Save Configuration</button>
-                    </div>
-                    <div id=\"saveNotice\" class=\"statusline\" style=\"text-align:center; margin-top:0.4rem;\"></div>`, summary: true
-            },
-        ];
+            [
+                {
+                    title: 'Smart Shade Setup',
+                    subtitle: 'Welcome!',
+                    body: `This wizard will guide you in setting up the configuration for your Smart Shade.<br><b>Be careful while configuring these settings, as it will not be possible to redo any steps without restarting the setup process.</b><br><br>Before continuing, please ensure all light sensors you want to use are plugged into the device.<br><br>Use the arrow below when you are ready to proceed.`,
+                    renderExtras: () => ''
+                },
+                {
+                    title: 'Smart Shade Setup',
+                    subtitle: 'Calibration (Sunshade)',
+                    body: `First, set the Sunshade <b>fully up</b> using the controls below.`,
+                    renderExtras: () => `
+                        <div class=\"row\" style=\"justify-content:center; gap:1rem; margin-top:0.6rem;\">
+                        <button id=\"wUp1\" class=\"btn\"><span class=\"icon\">north</span>Up</button>
+                        <button id=\"wDown1\" class=\"btn\"><span class=\"icon\">south</span>Down</button>
+                        </div>`, motor: 1
+                },
+                {
+                    title: 'Smart Shade Setup',
+                    subtitle: 'Calibration (Blackout)',
+                    body: `Next, set the Blackout Shade <b>fully up</b> using the controls below.<br>It should be perfectly level with the Sunshade.`,
+                    renderExtras: () => `
+                        <div class=\"row\" style=\"justify-content:center; gap:1rem; margin-top:0.6rem;\">
+                        <button id=\"wUp2\" class=\"btn\"><span class=\"icon\">north</span>Up</button>
+                        <button id=\"wDown2\" class=\"btn\"><span class=\"icon\">south</span>Down</button>
+                        </div>`, motor: 2
+                },
+                {
+                    title: 'Smart Shade Setup',
+                    subtitle: 'Sensor Positions',
+                    body: `Place your light sensors on the window frame.<br>You may space them however you like, but please ensure they are placed in order of port: port 0 should be the bottommost sensor, port 1 should be the next highest, and so on.<br><br>Once the sensors are in place, use the controls below to line the blind up with each sensor's position, starting from the bottommost sensor.<br>Once the blind is level with a sensor, use the 'Add Sensor' button to save that sensor's position.<br><br>Continue once the positions of all sensors have been saved.`,
+                    renderExtras: () => `
+                        <div class=\"card\" style=\"margin-top:0.4rem;\">
+                        <div class=\"row space\">
+                        <div><b>Sunshade step</b>: <span id=\"motorStep1b\">${motorSteps[1]}</span></div>
+                        <div class=\"row\">
+                        <button id=\"wUp3\" class=\"btn\"><span class=\"icon\">north</span></button>
+                        <button id=\"wDown3\" class=\"btn\"><span class=\"icon\">south</span></button>
+                        </div>
+                        </div>
+                        <div class=\"row\" style=\"justify-content:center; margin-top:0.5rem;\">
+                        <button id=\"addSensorBtn\" class=\"btn\"><span class=\"icon\">add</span>Add Sensor</button>
+                        </div>
+                        <div id=\"sensorProgress\" class=\"statusline\" style=\"text-align:center; margin-top:0.35rem;\"></div>
+                        <div id=\"sensorList\" class=\"list\" style=\"margin-top:0.5rem;\"></div>
+                        </div>`, sensor_steps: true
+                },
+                {
+                    title: 'Smart Shade Setup',
+                    subtitle: 'Light Sensitivity',
+                    body: `You may adjust the sensitivity of the light sensors if you are in an overcast or particularly bright area.<br>A higher reading indicates a greater amount of light.<br><br>If you are unsure, <b>2500</b> is typically a good amount.`,
+                    renderExtras: () => `
+                        <div class=\"card\">
+                        <div style=\"font-size:1.4rem; font-weight:700; text-align:center;\" id=\"thresholdValue\">${threshold}</div>
+                        <input type=\"range\" id=\"thresholdSlider\" min=\"0\" max=\"10000\" step=\"250\" value=\"${threshold}\">
+                        </div>`, threshold: true
+                },
+                {
+                    title: 'Smart Shade Setup',
+                    subtitle: '(Optional) Schedule Configuration',
+                    body: 'You may schedule actions for the shade to perform automatically when it is in Schedule Mode.<br>This can be completed or added to at a later time.',
+                    renderExtras: () => `
+                        <div class=\"card\">
+                        <div class=\"row\" style=\"gap:0.5rem; flex-wrap:wrap;\">
+                        <input type=\"time\" id=\"scheduleTime\" />
+                        <select id=\"scheduleMotor\"><option value=\"sunshade\">Sunshade</option><option value=\"blackout\">Blackout</option></select>
+                        <select id=\"scheduleLevel\"></select>
+                        <button id=\"addScheduleBtn\" class=\"btn\"><span class=\"icon\">add</span></button>
+                        </div>
+                        <div id=\"scheduleList\" class=\"list\" style=\"margin-top:0.5rem;\"></div>
+                        </div>`, schedules: true
+                },
+                {
+                    title: 'Smart Shade Setup',
+                    subtitle: 'Review & Save',
+                    body: 'Setup is now complete.<br>Review the settings below and press “Save Configuration” to apply them.<br><br>If any errors have been made, please repeat the setup process.',
+                    renderExtras: () => `
+                        <div id=\"summaryBox\" class=\"summary-box\" style=\"margin-top:0.5rem;\"></div>
+                        <div class=\"row\" style=\"justify-content:center; margin-top:0.6rem;\">
+                        <button id=\"saveBtn\" class=\"btn primary\"><span class=\"icon\">save</span>Save Configuration</button>
+                        </div>
+                        <div id=\"saveNotice\" class=\"statusline\" style=\"text-align:center; margin-top:0.4rem;\"></div>`, summary: true
+                },
+            ];
 
         /**
         * Renders the current step of the setup wizard.
         */
-        function renderStep()
-        {
+        function renderStep() {
             // Purpose: Render the current wizard step into the DOM.
             // - `currentStep` indexes the `steps` array.
             // - This function rebuilds the wizard content each time it is called
@@ -902,8 +1016,7 @@
 
             // If this step is tied to a specific motor, ensure that motor is selected
             // in the physical device so user controls affect the expected blind.
-            if (s.motor)
-            {
+            if (s.motor) {
                 ensureCorrectBlind(s.motor);
             }
 
@@ -912,38 +1025,67 @@
             // - `paint()` regenerates the sensor list and wires delete handlers.
             // - Clicking Add stores the current sunshade motor step as a sensor position.
             // - ensureSunshadeActive() attempts to make the sunshade active before painting the list.
-            if (s.sensor_steps)
-            {
+            if (s.sensor_steps) {
                 const addBtn = qs('addSensorBtn'); const list = qs('sensorList');
-                function paint()
-                {
-                    // Render sensor list in reverse so sensor 1 appears at the bottom of the list
+
+                function paint() {
+                    // Render sensor list in reverse so bottom-most sensor visually appears at bottom.
                     let html = '';
-                    for (let i = sensorSteps.length - 1; i >= 0; i--)
-                    {
-                        const l = sensorSteps[i];
-                        html += `<div class='list-item'><div><strong>Sensor ${i + 1}</strong>: ${l.step} steps</div><button class='delete' data-index='${i}'><span class='icon'>delete</span></button></div>`;
+                    for (let i = sensorSteps.length - 1; i >= 0; i--) {
+                        const entry = sensorSteps[i];
+                        html += `<div class='list-item'><div><strong>Sensor ${entry.physIndex + 1}</strong>: ${entry.step} steps</div><button class='delete' data-index='${i}'><span class='icon'>delete</span></button></div>`;
                     }
                     list.innerHTML = html;
-                    list.querySelectorAll('.delete').forEach(btn => btn.addEventListener('click', () => { const idx = Number(btn.getAttribute('data-index')); sensorSteps.splice(idx, 1); paint(); }));
+                    list.querySelectorAll('.delete').forEach(btn => btn.addEventListener('click', () => {
+                        const idx = Number(btn.getAttribute('data-index'));
+                        sensorSteps.splice(idx, 1);
+                        paint();
+                        updateSensorStepNavState();
+                    }));
                 }
-                addBtn.addEventListener('click', () => {
-                    sensorSteps.push({ step: motorSteps[1] });
-                    paint();
-                });
+
+                // Add sensor handler: append next present sensor (by physical index order)
+                if (addBtn) {
+                    // remove any existing handler to avoid duplicates
+                    addBtn.replaceWith(addBtn.cloneNode(true));
+                }
+
+                const newAdd = qs('addSensorBtn');
+                if (newAdd) {
+                    newAdd.addEventListener('click', () => {
+                        const present = getPresentSensorIndices();
+                        if (!present) {
+                            // fallback: preserve existing behaviour (logical numbering)
+                            sensorSteps.push({ physIndex: sensorSteps.length, step: motorSteps[1] });
+                            paint();
+                            updateSensorStepNavState();
+                            return;
+                        }
+                        const nextIdx = sensorSteps.length; // count of sensors already added
+                        if (nextIdx >= present.length) {
+                            // guard: no more to add
+                            return;
+                        }
+                        const phys = present[nextIdx];
+                        sensorSteps.push({ physIndex: phys, step: motorSteps[1] });
+                        paint();
+                        updateSensorStepNavState();
+                    });
+                }
+
                 paint();
                 // Ensure Sunshade is active BEFORE first render of this step
                 (async () => {
                     await ensureSunshadeActive();  // uses /api/swap_dumb under the hood
                     paint();
+                    updateSensorStepNavState();
                 })();
             }
 
             // Threshold slider:
             // - If the step exposes a threshold slider, wire up input events to update the
             //   `threshold` variable and update the displayed value in realtime.
-            if (s.threshold)
-            {
+            if (s.threshold) {
                 const slider = qs('thresholdSlider'); const val = qs('thresholdValue');
                 slider.addEventListener('input', () => { threshold = parseInt(slider.value, 10); val.textContent = `${threshold}`; });
             }
@@ -953,11 +1095,9 @@
             // - fillLevelOptions populates available sensor levels (depends on sensorMask).
             // - paintSchedules shows existing schedules and wires delete buttons.
             // - addBtn adds a schedule object into the `schedules` array and repaints.
-            if (s.schedules)
-            {
+            if (s.schedules) {
                 const timeInput = qs('scheduleTime'); const motorSelect = qs('scheduleMotor'); const levelSelect = qs('scheduleLevel'); const addBtn = qs('addScheduleBtn'); const list = qs('scheduleList');
-                const fillLevelOptions = () =>
-                {
+                const fillLevelOptions = () => {
                     const present = getPresentSensorIndices();
                     // always include Top option
                     let opts = `<option value="5">Top (Level 5)</option>`;
@@ -979,17 +1119,16 @@
                         levelSelect.innerHTML = `<option disabled>No Sensors added</option>`;
                     }
                 };
-                function paintSchedules()
-                {
+                function paintSchedules() {
                     // only show schedules that map to present sensors (or special '5')
                     const present = getPresentSensorIndices();
-                    const availableCount = present ? present.length : null;
+                    const presentArr = present || null;
                     list.innerHTML = schedules.filter(s => {
                         const lvl = Number(s.level);
                         if (!isFinite(lvl)) return false;
                         if (lvl === 5) return true;
-                        if (present === null) return true;
-                        return present.includes(lvl);
+                        if (presentArr === null) return true;
+                        return presentArr.includes(lvl);
                     }).map((s, i) => `<div class='list-item'><div><strong>${s.time}</strong> — ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'} ? ${formatLevelDisplay(s.level)}</div><button class='delete' data-index='${i}'><span class='icon'>delete</span></button></div>`).join('');
                     list.querySelectorAll('.delete').forEach(btn => btn.addEventListener('click', () => { const idx = btn.getAttribute('data-index'); schedules.splice(idx, 1); paintSchedules(); }));
                 }
@@ -1002,8 +1141,7 @@
             //   calibration values, levels, threshold and schedules.
             // - Wire the save button to call saveToPi which persists configuration
             //   and then attempts to switch back to manual mode on success.
-            if (s.summary)
-            {
+            if (s.summary) {
                 const box = qs('summaryBox'); const saveBtn = qs('saveBtn'); const saveMsg = qs('saveNotice');
                 const motor1StepsFinal = config.motors[0] ?? motorSteps[1]; const motor2StepsFinal = config.motors[1] ?? motorSteps[2];
 
@@ -1012,30 +1150,27 @@
                 if (sensorSteps.length) {
                     const parts = [];
                     for (let i = sensorSteps.length - 1; i >= 0; i--) {
-                        parts.push(`Sensor ${i + 1}: ${sensorSteps[i].step} steps`);
+                        parts.push(`Sensor ${sensorSteps[i].physIndex + 1}: ${sensorSteps[i].step} steps`);
                     }
                     levelsSummary = parts.join('<br>');
                 }
 
                 box.innerHTML = `
-                    <div class='card'><div><strong>Levels</strong></div>${levelsSummary}</div>
-                    <div class='card'><div><strong>Light Sensitivity</strong> ${threshold}</div></div>
-                    <div class='card'><div><strong>Schedules</strong></div>${schedules.length ? schedules.map(s => `${s.time} ? ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'}, ${formatLevelDisplay(s.level)}`).join('<br>') : 'No schedules added'}</div>`;
+                        <div class='card'><div><strong>Levels</strong></div>${levelsSummary}</div>
+                        <div class='card'><div><strong>Light Sensitivity</strong> ${threshold}</div></div>
+                        <div class='card'><div><strong>Schedules</strong></div>${schedules.length ? schedules.map(s => `${s.time} ? ${s.motor === 'sunshade' ? 'Sunshade' : 'Blackout'}, ${formatLevelDisplay(s.level)}`).join('<br>') : 'No schedules added'}</div>`;
 
                 saveBtn.addEventListener('click', async () => {
                     const settings = makeSettingsPayload();
                     const ok = await save(settings, schedules);
-                    if (ok)
-                    {
+                    if (ok) {
                         saveMsg.textContent = '✅ Configuration saved successfully! Returning to main menu...';
-                        try
-                        {
+                        try {
                             await fetch('/api/mode', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'manual' }) });
                             statusState.mode = 'manual';
                             setTimeout(() => { showPanel(); }, 1200);
                         }
-                        catch (e)
-                        {
+                        catch (e) {
                             console.error('Failed to switch to manual mode:', e);
                         }
                     }
@@ -1045,15 +1180,13 @@
             }
         }
 
-        function changeStep(delta, motor)
-        {
+        function changeStep(delta, motor) {
             motorSteps[motor] = motorSteps[motor] + delta;
             document.querySelectorAll(`#motorStep${motor}, #motorStep${motor}b`).forEach(el => (el.textContent = motorSteps[motor]));
             moveDuringSetup(delta < 0 ? 'up' : 'down');
         }
 
-        function moveDuringSetup(direction)
-        {
+        function moveDuringSetup(direction) {
             fetch('/api/move_unsafe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1061,10 +1194,8 @@
             }).catch(err => console.error('Setup move failed', err));
         }
 
-        async function ensureCorrectBlind(motor)
-        {
-            try
-            {
+        async function ensureCorrectBlind(motor) {
+            try {
                 const res = await fetch('/api/status');
                 const data = await res.json();
                 const active = data.active_shade;
@@ -1074,16 +1205,13 @@
                     await new Promise(r => setTimeout(r, 500));
                 }
             }
-            catch (e)
-            {
+            catch (e) {
                 console.error('Failed to ensure correct blind', e);
             }
         }
 
-        async function ensureSunshadeActive()
-        {
-            try
-            {
+        async function ensureSunshadeActive() {
+            try {
                 const res = await fetch('/api/status');
                 const data = await res.json();
                 if (data.active_shade !== 'sunshade') {
@@ -1091,8 +1219,7 @@
                     await new Promise(r => setTimeout(r, 500));
                 }
             }
-            catch (e)
-            {
+            catch (e) {
                 console.error('Failed to set sunshade active', e);
             }
         }
@@ -1100,8 +1227,7 @@
         // Wizard nav
         qs('nextBtn').addEventListener('click', async () => {
             if (currentStep === 1) { config.motors[0] = motorSteps[1]; motorSteps[1] = 0; }
-            if (currentStep === 2)
-            {
+            if (currentStep === 2) {
                 config.motors[1] = motorSteps[2];
                 motorSteps[2] = 0;
                 try {
@@ -1120,6 +1246,15 @@
                     // leave local values intact so user can retry or inspect
                 }
             }
+            // Prevent advancing if on sensor step and not all sensors have been added
+            if (currentStep === 3) {
+                const present = getPresentSensorIndices();
+                if (present && sensorSteps.length < present.length) {
+                    // blocked - do nothing
+                    return;
+                }
+                // when there is no mask, fall back to previous permissive behaviour
+            }
 
             if (currentStep < steps.length - 1) currentStep++; renderStep();
         });
@@ -1127,8 +1262,7 @@
         /* ------------------------------------------------------------------
          * App bootstrap & polling
          * ------------------------------------------------------------------ */
-        async function bootstrap()
-        {
+        async function bootstrap() {
             // Make Up/Down buttons holdable in panel
             makeRepeatable(qs('btnUp'), () => move('up'));
             makeRepeatable(qs('btnDown'), () => move('down'));
@@ -1140,14 +1274,12 @@
             if (pollTimer) clearInterval(pollTimer);
             pollTimer = setInterval(async () => {
                 const oldMode = statusState.mode;
-                try
-                {
+                try {
                     await updateStatus();
                     if (oldMode !== statusState.mode) { if (statusState.mode === 'setup') showWizard(); else showPanel(); }
                     if (statusState.mode === 'auto') refreshSensors();
                 }
-                catch (e)
-                {
+                catch (e) {
                     console.warn('Polling failed:', e);
                 }
             }, POLL_MS);
